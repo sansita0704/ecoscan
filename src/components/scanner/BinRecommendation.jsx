@@ -34,13 +34,8 @@ export default function BinRecommendation({ category, color }) {
 
         <div className="min-w-0">
           <p className="text-label">Dispose in</p>
-<<<<<<< HEAD
-          <p className="mt-0.5 text-lg font-bold leading-tight text-white">{bin.label}</p>
-          <p className="mt-1 text-sm font-medium" style={{ color: hex }}>
-=======
           <p className="mt-0.5 text-lg font-bold leading-tight text-slate-800">{bin.label}</p>
-          <p className="mt-1 text-sm font-medium" style={{ color: bin.hex }}>
->>>>>>> d599dcb (refactor: update UI styles and colors across components for improved accessibility and consistency)
+          <p className="mt-1 text-sm font-medium" style={{ color: hex }}>
             {bin.bin}
           </p>
           <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{bin.note}</p>

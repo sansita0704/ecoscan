@@ -1,16 +1,4 @@
-<<<<<<< HEAD
-import {
-  AlertTriangle,
-  Loader2,
-  QrCode,
-  ScanLine,
-  ShieldCheck,
-  Sparkles,
-  Trash2,
-} from "lucide-react";
-=======
-import { Layers, Loader2, QrCode, ScanLine, Weight } from "lucide-react";
->>>>>>> d599dcb (refactor: update UI styles and colors across components for improved accessibility and consistency)
+import { AlertTriangle, Loader2, QrCode, ScanLine, ShieldCheck, Trash2 } from "lucide-react";
 import { getMaterial } from "../../config/wasteTaxonomy";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";

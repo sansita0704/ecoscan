@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 from ultralytics import YOLO
 
-from waste_rules import BIN_MAPPING, CLASS_NAMES, display_name, get_bin_rule
+from waste_rules import BIN_MAPPING, CLASS_NAMES, SMALL_ITEM_CLASSES, display_name, get_bin_rule
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("ecoscan")
@@ -51,6 +51,13 @@ MAX_DET = _env_int("ECOSCAN_MAX_DET", 40)
 MAX_UPLOAD_BYTES = _env_int("ECOSCAN_MAX_UPLOAD_BYTES", 8 * 1024 * 1024)
 # Two boxes of different classes overlapping this much are the same physical object.
 CROSS_CLASS_IOU = _env_float("ECOSCAN_CROSS_CLASS_IOU", 0.80)
+# A "small item" class (cap, lid, battery, bulb, straw - see waste_rules.py)
+# covering more of the frame than this is a plausibility failure, not a huge
+# bottle cap: the classification head is very likely wrong about a box this
+# size, so the detection is dropped rather than shown as if it were reliable.
+# Generous on purpose - held close to a webcam a small item legitimately fills
+# a good chunk of frame.
+SMALL_ITEM_MAX_AREA = _env_float("ECOSCAN_SMALL_ITEM_MAX_AREA", 0.15)
 DEVICE = os.getenv("ECOSCAN_DEVICE") or None
 
 # The fine-tuned 22-class YOLOv8 checkpoint (see backend/bin_mapping.json for
@@ -239,6 +246,17 @@ def _extract_detections(result, names, frame_w: int, frame_h: int) -> List[Dict[
             class_name = names.get(cls_id, f"class_{cls_id}")
         else:
             class_name = names[cls_id] if 0 <= cls_id < len(names) else f"class_{cls_id}"
+
+        # A cap/lid/battery/bulb/straw box covering a large share of the frame
+        # is a classification error, not an oversized cap - drop it rather
+        # than show a confident-looking label on the wrong object.
+        area = norm_box["w"] * norm_box["h"]
+        if class_name in SMALL_ITEM_CLASSES and area > SMALL_ITEM_MAX_AREA:
+            logger.debug(
+                "Dropping implausible %s: box covers %.0f%% of frame (max %.0f%%)",
+                class_name, area * 100, SMALL_ITEM_MAX_AREA * 100,
+            )
+            continue
 
         confidence = round(float(conf), 3)
         rule = get_bin_rule(class_name)

@@ -56,6 +56,16 @@ CLASS_NAMES = [
 ]
 
 
+# Rough real-world size class, used only as a plausibility guard on the box
+# the model itself draws - never as a measurement. Compact items rarely fill
+# most of the camera frame; if the model reports one of these classes for a
+# box that does, the label is more likely wrong than the object is genuinely
+# that large; see main.py's _extract_detections.
+SMALL_ITEM_CLASSES = {
+    "battery", "plastic_bottle_cap", "plastic_cup_lid", "light_bulb", "straw",
+}
+
+
 def normalize_class_name(class_name: str) -> str:
     """Lower-case, underscore-separated form of a model class name."""
     cleaned = str(class_name).lower().strip()

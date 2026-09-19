@@ -62,7 +62,7 @@ export default function WasteCategoryCard({ material, count = 0, expanded, onTog
                 className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"
               >
                 <span className="min-w-0 truncate text-sm text-slate-200">
-                  {rule?.label ?? className}
+                  {rule?.display_name ?? className}
                 </span>
                 <span
                   className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-[0.6875rem] font-semibold ${bin.border} ${bin.surface} ${bin.text}`}

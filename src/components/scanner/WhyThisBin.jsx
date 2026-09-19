@@ -72,17 +72,10 @@ export default function WhyThisBin({ detection }) {
             tone="border-brand-500/30 bg-brand-500/10 text-brand-400"
             title="2 · Waste rule"
           >
-<<<<<<< HEAD
             A configured bin mapping (bin_mapping.json) routes that class to{" "}
-            <span className="font-medium text-slate-200">{detection.bin ?? detection.category}</span>
+            <span className="font-medium text-slate-700">{detection.bin ?? detection.category}</span>
             {detection.isHazardous ? ", flagged for hazardous handling," : ""} along with its
             preparation tip. This is a lookup, not a second prediction.
-=======
-            A configured rule table maps that class to{" "}
-            <span className="font-medium text-slate-700">{detection.category}</span>, material grade{" "}
-            <span className="font-medium text-slate-700">{detection.grade}</span>, and its
-            preparation steps. This is a lookup, not a second prediction.
->>>>>>> d599dcb (refactor: update UI styles and colors across components for improved accessibility and consistency)
           </Step>
 
           <Step
