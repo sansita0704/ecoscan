@@ -5,8 +5,8 @@ const EPSILON = 0.5;
 
 /**
  * Image sibling of useVideoViewport: maps the uploaded photo's own pixel
- * coordinates onto the container's displayed pixel box, accounting for
- * `object-fit: cover` cropping the same way the live feed does.
+ * coordinates onto the container's displayed pixel box, accounting for the
+ * upload preview's `object-fit: contain` letterboxing.
  *
  * Kept as its own hook rather than generalising useVideoViewport in place -
  * that hook is relied on by the live detection path, and this file existing
@@ -28,7 +28,8 @@ export function useImageViewport(imgRef, containerRef, active) {
         container.clientWidth,
         container.clientHeight,
         img.naturalWidth,
-        img.naturalHeight
+        img.naturalHeight,
+        "contain"
       );
       if (!next) {
         setViewport(null);

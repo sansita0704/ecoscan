@@ -1,5 +1,5 @@
 /**
- * Geometry for drawing model boxes over a video rendered with `object-fit: cover`.
+ * Geometry for drawing model boxes over media rendered with `object-fit`.
  *
  * The model sees the full camera frame, but the element shows a centred crop of
  * it whenever the frame and the element disagree on aspect ratio. Treating
@@ -9,13 +9,23 @@
  */
 
 /**
- * Replicate `object-fit: cover`: scale to fill, preserve aspect ratio, centre,
- * and let the overflow be clipped.
+ * Replicate `object-fit: cover` or `contain`: preserve aspect ratio and centre
+ * the complete media inside the container. Uploads use `contain` so the source
+ * image is never cropped; the live camera keeps using `cover`.
  */
-export function computeViewport(containerWidth, containerHeight, frameWidth, frameHeight) {
+export function computeViewport(
+  containerWidth,
+  containerHeight,
+  frameWidth,
+  frameHeight,
+  fit = "cover"
+) {
   if (!containerWidth || !containerHeight || !frameWidth || !frameHeight) return null;
 
-  const scale = Math.max(containerWidth / frameWidth, containerHeight / frameHeight);
+  const scale = (fit === "contain" ? Math.min : Math.max)(
+    containerWidth / frameWidth,
+    containerHeight / frameHeight
+  );
   const displayWidth = frameWidth * scale;
   const displayHeight = frameHeight * scale;
 

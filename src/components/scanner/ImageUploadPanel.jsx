@@ -107,7 +107,7 @@ export default function ImageUploadPanel({ status, previewUrl, detection, error,
               ref={imgRef}
               src={previewUrl}
               alt="Uploaded waste"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
             />
             <BoundingBox detection={detection} mirrored={false} viewport={viewport} />
 
