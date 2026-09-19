@@ -36,7 +36,7 @@ function iou(a, b) {
   return union > 0 ? inter / union : 0;
 }
 
-/** Mirrors backend/main.py's _prominence: confidence, favouring large centred boxes. */
+/** Mirrors backend/main.py's _prominence(): confidence, favouring large centred boxes. */
 function prominence(confidence, box) {
   const area = Math.max(0, box.w) * Math.max(0, box.h);
   const size = Math.sqrt(Math.min(1, area));
@@ -150,22 +150,22 @@ export function createObjectTracker({
         ...item,
         box: t.smoothedBox,
         confidence: t.smoothedConfidence,
-        _trackId: t.id,
-        _prominence: prominence(t.smoothedConfidence, t.smoothedBox),
+        trackId: t.id,
+        prominenceScore: prominence(t.smoothedConfidence, t.smoothedBox),
       });
     }
-    confirmed.sort((a, b) => b._prominence - a._prominence);
+    confirmed.sort((a, b) => b.prominenceScore - a.prominenceScore);
 
     // The headline item (what the result panel describes) keeps hysteresis
     // too: don't let it swap to a marginally more prominent item every tick.
-    let primary = confirmed.find((c) => c._trackId === primaryId) ?? null;
+    let primary = confirmed.find((c) => c.trackId === primaryId) ?? null;
     const top = confirmed[0] ?? null;
     if (!primary) {
       primary = top;
-    } else if (top && top._trackId !== primaryId && top._prominence > primary._prominence * 1.15) {
+    } else if (top && top.trackId !== primaryId && top.prominenceScore > primary.prominenceScore * 1.15) {
       primary = top;
     }
-    primaryId = primary?._trackId ?? null;
+    primaryId = primary?.trackId ?? null;
 
     return { primary, all: confirmed };
   }

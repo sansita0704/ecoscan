@@ -21,6 +21,9 @@
  * @property {{x: number, y: number, w: number, h: number}} box  normalised 0..1, top-left origin
  * @property {number} [totalItems]       how many items the backend found in the frame
  * @property {Detection[]} [detections]  every item in the frame, this one first
+ * @property {number} [trackId]          stable per-physical-object id from utils/objectTracker,
+ *                                        good for React keys and per-item advice state - NOT
+ *                                        stable across a camera stop/start (the tracker resets)
  */
 
 /**

@@ -3,7 +3,7 @@ import Header from "./components/layout/Header";
 import MobileNav from "./components/layout/MobileNav";
 import Sidebar from "./components/layout/Sidebar";
 import { useCamera } from "./hooks/useCamera";
-import { useDisposalAdvice } from "./hooks/useDisposalAdvice";
+import { useMultiDisposalAdvice } from "./hooks/useMultiDisposalAdvice";
 import { useScanLog } from "./hooks/useScanLog";
 import FacilitiesPage from "./pages/FacilitiesPage";
 import ImpactPage from "./pages/ImpactPage";
@@ -23,8 +23,10 @@ export default function App() {
   const camera = useCamera();
   const { stats, track, reset } = useScanLog();
   // Held here rather than in ScannerPage so advice survives leaving the scanner
-  // and coming back, the same way the camera does.
-  const advice = useDisposalAdvice();
+  // and coming back, the same way the camera does. One independent advice
+  // slot per confirmed item (see hooks/useMultiDisposalAdvice), not one global
+  // slot, so asking about a second item doesn't clear the first item's answer.
+  const advice = useMultiDisposalAdvice();
 
   const navigate = useCallback((next) => {
     setView(next);
