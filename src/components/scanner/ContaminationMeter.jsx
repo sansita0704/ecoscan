@@ -45,7 +45,7 @@ export default function ContaminationMeter({ level, label, score = 0 }) {
         aria-valuemax={100}
         aria-valuenow={pct}
         aria-valuetext={text}
-        className="h-2 w-full overflow-hidden rounded-full bg-white/[0.08]"
+        className="h-2 w-full overflow-hidden rounded-full bg-slate-200"
       >
         <div
           className="h-full rounded-full transition-[width,background-color] duration-300"

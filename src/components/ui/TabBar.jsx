@@ -9,7 +9,7 @@ export default function TabBar({ tabs, active, onChange, className = "" }) {
     <div
       role="tablist"
       aria-label="Result view"
-      className={`flex gap-1 rounded-xl border border-white/[0.07] bg-ink-900/70 p-1 ${className}`}
+      className={`flex gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 ${className}`}
     >
       {tabs.map(({ id, label, icon: Icon, badge, disabled }) => {
         const current = active === id;
@@ -25,12 +25,12 @@ export default function TabBar({ tabs, active, onChange, className = "" }) {
             onClick={() => onChange(id)}
             className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
               current
-                ? "bg-brand-500/15 text-white"
-                : "text-slate-400 hover:bg-white/[0.05] hover:text-white"
+                ? "bg-white text-brand-600 shadow-sm"
+                : "text-slate-500 hover:bg-white/60 hover:text-slate-700"
             }`}
           >
             {Icon && (
-              <Icon size={15} aria-hidden="true" className={current ? "text-brand-400" : ""} />
+              <Icon size={15} aria-hidden="true" className={current ? "text-brand-500" : ""} />
             )}
             {label}
             {badge && !current && (

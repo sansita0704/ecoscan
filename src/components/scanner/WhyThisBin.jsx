@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, Cpu, ScrollText, Sparkles } from "lucide-react";
+import { ChevronDown, Cpu, ScrollText } from "lucide-react";
 import { getBin } from "../../config/wasteTaxonomy";
 
 function Step({ icon: Icon, tone, title, children }) {
@@ -14,7 +14,7 @@ function Step({ icon: Icon, tone, title, children }) {
         <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-slate-400">
           {title}
         </p>
-        <p className="mt-1 text-sm leading-relaxed text-slate-300">{children}</p>
+        <p className="mt-1 text-sm leading-relaxed text-slate-600">{children}</p>
       </div>
     </li>
   );
@@ -33,15 +33,15 @@ export default function WhyThisBin({ detection }) {
   const pct = Math.round(detection.confidence * 100);
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-ink-800/40">
+    <div className="rounded-xl border border-slate-200 bg-slate-50">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition-colors hover:bg-white/[0.03]"
+        className="flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition-colors hover:bg-slate-100"
       >
-        <span className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-          <Sparkles size={15} className="text-brand-400" aria-hidden="true" />
+        <span className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <ScrollText size={15} className="text-brand-500" aria-hidden="true" />
           Why this bin?
         </span>
         <ChevronDown
@@ -54,14 +54,14 @@ export default function WhyThisBin({ detection }) {
       </button>
 
       {open && (
-        <ol className="animate-fade-in space-y-3.5 border-t border-white/[0.06] px-4 py-4">
+        <ol className="animate-fade-in space-y-3.5 border-t border-slate-200 px-4 py-4">
           <Step
             icon={Cpu}
             tone="border-tech-400/30 bg-tech-400/10 text-tech-300"
-            title="1 · AI detection"
+            title="1 · Item detection"
           >
             The vision model identified this object as{" "}
-            <code className="rounded bg-white/[0.08] px-1 py-0.5 font-mono text-[0.8em] text-tech-300">
+              <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.8em] text-blue-600">
               {detection.rawClass ?? detection.className}
             </code>{" "}
             with {pct}% confidence, and located it in the frame.
@@ -72,10 +72,17 @@ export default function WhyThisBin({ detection }) {
             tone="border-brand-500/30 bg-brand-500/10 text-brand-400"
             title="2 · Waste rule"
           >
+<<<<<<< HEAD
             A configured bin mapping (bin_mapping.json) routes that class to{" "}
             <span className="font-medium text-slate-200">{detection.bin ?? detection.category}</span>
             {detection.isHazardous ? ", flagged for hazardous handling," : ""} along with its
             preparation tip. This is a lookup, not a second prediction.
+=======
+            A configured rule table maps that class to{" "}
+            <span className="font-medium text-slate-700">{detection.category}</span>, material grade{" "}
+            <span className="font-medium text-slate-700">{detection.grade}</span>, and its
+            preparation steps. This is a lookup, not a second prediction.
+>>>>>>> d599dcb (refactor: update UI styles and colors across components for improved accessibility and consistency)
           </Step>
 
           <Step
@@ -84,10 +91,10 @@ export default function WhyThisBin({ detection }) {
             title="3 · Recommendation"
           >
             That category corresponds to the{" "}
-            <span className="font-medium text-slate-200">{bin.bin}</span>. {bin.note}
+            <span className="font-medium text-slate-700">{bin.bin}</span>. {bin.note}
           </Step>
 
-          <li className="border-t border-white/[0.06] pt-3">
+          <li className="border-t border-slate-100 pt-3">
             <p className="text-xs leading-relaxed text-slate-500">
               The model reports the object class, its confidence and a bounding box. The bin, the
               hazard flag and the preparation tip are rule-based guidance rather than measurements.

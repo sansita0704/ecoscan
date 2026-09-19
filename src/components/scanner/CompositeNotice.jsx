@@ -17,14 +17,14 @@ export default function CompositeNotice({ detections = [] }) {
   if (new Set(bins.map((b) => b.id)).size < 2) return null;
 
   return (
-    <div className="animate-fade-up overflow-hidden rounded-2xl border border-accent-500/30 bg-accent-500/[0.07]">
-      <div className="flex items-center gap-2 border-b border-accent-500/20 px-4 py-2.5">
-        <Layers size={15} className="text-accent-400" aria-hidden="true" />
-        <p className="text-sm font-semibold text-white">Separate before disposal</p>
+    <div className="animate-fade-up overflow-hidden rounded-2xl border border-pink-200 bg-pink-50">
+      <div className="flex items-center gap-2 border-b border-pink-100 px-4 py-2.5">
+        <Layers size={15} className="text-pink-500" aria-hidden="true" />
+        <p className="text-sm font-semibold text-slate-800">Separate before disposal</p>
       </div>
 
       <div className="px-4 py-3">
-        <p className="text-xs leading-relaxed text-slate-400">
+        <p className="text-xs leading-relaxed text-slate-500">
           Several objects are in frame and they don't share a bin. Split them first.
         </p>
 
@@ -35,9 +35,9 @@ export default function CompositeNotice({ detections = [] }) {
             return (
               <li
                 key={`${part.className}-${i}`}
-                className="flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-ink-900/60 px-3 py-2.5"
+                className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5"
               >
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-100">
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">
                   {part.className}
                 </span>
                 <MoveRight size={14} className="shrink-0 text-slate-500" aria-hidden="true" />

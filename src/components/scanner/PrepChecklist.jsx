@@ -14,7 +14,7 @@ export default function PrepChecklist({ steps }) {
         <h3 className="text-label">Before disposal</h3>
         <span
           className={`text-xs font-semibold tabular-nums ${
-            complete ? "text-success-400" : "text-slate-400"
+            complete ? "text-success-600" : "text-slate-400"
           }`}
         >
           {done}/{steps.length} done
@@ -22,7 +22,7 @@ export default function PrepChecklist({ steps }) {
       </div>
 
       <div
-        className="mb-3 h-1 w-full overflow-hidden rounded-full bg-white/[0.08]"
+        className="mb-3 h-1 w-full overflow-hidden rounded-full bg-slate-200"
         role="progressbar"
         aria-label="Preparation progress"
         aria-valuemin={0}
@@ -43,8 +43,8 @@ export default function PrepChecklist({ steps }) {
             <label
               className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition-colors ${
                 checked[i]
-                  ? "border-success-500/30 bg-success-500/[0.07] text-slate-400"
-                  : "border-white/[0.06] bg-ink-800/50 text-slate-200 hover:border-brand-500/30 hover:bg-ink-800"
+                  ? "border-success-500/30 bg-success-50 text-slate-500"
+                  : "border-slate-200 bg-slate-50 text-slate-700 hover:border-brand-300 hover:bg-white"
               }`}
             >
               <input
@@ -54,10 +54,10 @@ export default function PrepChecklist({ steps }) {
                 className="peer sr-only"
               />
               <span
-                className={`mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand-400 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink-900 ${
+                className={`mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand-400 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-white ${
                   checked[i]
-                    ? "border-success-500 bg-success-500 text-ink-950"
-                    : "border-white/25"
+                    ? "border-success-500 bg-success-500 text-white"
+                    : "border-slate-300"
                 }`}
               >
                 {checked[i] && <Check size={13} strokeWidth={3} aria-hidden="true" />}

@@ -63,7 +63,7 @@ export default function MobileResultSheet({ open, onToggle, detection, advice, t
         <button
           type="button"
           aria-label="Close result"
-          className="fixed inset-0 z-[55] bg-ink-950/70 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-[55] bg-slate-900/40 backdrop-blur-sm lg:hidden"
           onClick={onToggle}
         />
       )}
@@ -76,7 +76,7 @@ export default function MobileResultSheet({ open, onToggle, detection, advice, t
             : "bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30"
         }`}
       >
-        <div className="flex h-full flex-col rounded-t-3xl border-t border-white/10 bg-ink-900 shadow-[0_-16px_48px_-16px_rgba(0,0,0,.85)]">
+        <div className="flex h-full flex-col rounded-t-3xl border-t border-slate-200 bg-white shadow-[0_-16px_48px_-16px_rgba(0,0,0,.12)]">
           <button
             type="button"
             onClick={onToggle}
@@ -85,7 +85,7 @@ export default function MobileResultSheet({ open, onToggle, detection, advice, t
           >
             <span
               aria-hidden="true"
-              className="absolute left-1/2 top-1.5 h-1 w-9 -translate-x-1/2 rounded-full bg-white/20"
+              className="absolute left-1/2 top-1.5 h-1 w-9 -translate-x-1/2 rounded-full bg-slate-200"
             />
 
             <span
@@ -96,7 +96,7 @@ export default function MobileResultSheet({ open, onToggle, detection, advice, t
             </span>
 
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-bold text-white">{peek.title}</span>
+              <span className="block truncate text-sm font-bold text-slate-800">{peek.title}</span>
               <span className="block truncate text-xs font-medium" style={{ color: peek.hex }}>
                 {peek.subtitle}
               </span>

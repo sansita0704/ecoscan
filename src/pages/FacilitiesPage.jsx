@@ -23,8 +23,8 @@ export default function FacilitiesPage() {
           aria-hidden="true"
         />
         <div>
-          <p className="text-sm font-semibold text-white">Hazardous items need a staffed drop-off</p>
-          <p className="mt-1 text-xs leading-relaxed text-slate-400">
+          <p className="text-sm font-semibold text-slate-800">Hazardous items need a staffed drop-off</p>
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">
             Broken glass and other sharps should be wrapped, labelled and handed over in person —
             never placed in a kerbside bin.
           </p>

@@ -22,8 +22,8 @@ function BinLegend() {
             >
               <Icon size={18} className={`mt-0.5 shrink-0 ${bin.text}`} aria-hidden="true" />
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-white">{bin.label}</p>
-                <p className="mt-0.5 text-xs leading-relaxed text-slate-400">{bin.note}</p>
+                <p className="text-sm font-semibold text-slate-800">{bin.label}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{bin.note}</p>
               </div>
             </li>
           );
@@ -69,7 +69,7 @@ export default function WasteGuidePage({ stats }) {
 
       <Card variant="inset" className="flex items-start gap-3 p-4">
         <Info size={16} className="mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
-        <p className="text-xs leading-relaxed text-slate-400">
+        <p className="text-xs leading-relaxed text-slate-500">
           The detection model recognises twenty-two specific object classes. Material families and bin
           mappings shown here come from the configured disposal rules, not from the model. Items
           outside those classes won't be detected.

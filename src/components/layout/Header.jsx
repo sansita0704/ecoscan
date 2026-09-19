@@ -8,7 +8,7 @@ export default function Header({ camera, onNavigate }) {
   const running = camera.isLive || camera.status === "starting";
 
   return (
-    <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-ink-950/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
       <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
         {/* Brand shows on mobile only; the sidebar has it on desktop. */}
         <button
@@ -16,11 +16,11 @@ export default function Header({ camera, onNavigate }) {
           onClick={() => onNavigate("home")}
           className="flex items-center gap-2.5 lg:hidden"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-500">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 shadow-glow">
             <Leaf size={18} className="text-white" aria-hidden="true" />
           </span>
-          <span className="text-[0.9375rem] font-extrabold tracking-tight text-white">
-            EcoScan AI
+          <span className="text-[0.9375rem] font-extrabold tracking-tight text-slate-800">
+            EcoScan
           </span>
         </button>
 

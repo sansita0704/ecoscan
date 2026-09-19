@@ -26,10 +26,10 @@ export default function WasteCategoryCard({ material, count = 0, expanded, onTog
             className="h-20 w-20 shrink-0 transition-transform duration-300 group-hover:scale-105"
           />
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-bold leading-tight text-white">{material.name}</h3>
+            <h3 className="text-lg font-bold leading-tight text-slate-800">{material.name}</h3>
             <p className="mt-1 text-sm leading-relaxed text-slate-400">{material.blurb}</p>
             <p className="mt-3 text-sm">
-              <span className="font-bold tabular-nums text-white">{count}</span>{" "}
+              <span className="font-bold tabular-nums text-slate-800">{count}</span>{" "}
               <span className="text-slate-500">
                 {count === 1 ? "item scanned" : "items scanned"}
               </span>
@@ -51,7 +51,7 @@ export default function WasteCategoryCard({ material, count = 0, expanded, onTog
       </button>
 
       {expanded && (
-        <ul id={panelId} className="animate-fade-in space-y-2 border-t border-white/[0.06] p-4">
+        <ul id={panelId} className="animate-fade-in space-y-2 border-t border-slate-100 p-4">
           {material.classes.map((className) => {
             const rule = ruleFor(className);
             const bin = getBin(rule?.bin);
@@ -59,10 +59,10 @@ export default function WasteCategoryCard({ material, count = 0, expanded, onTog
             return (
               <li
                 key={className}
-                className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.05] bg-ink-800/50 px-3 py-2.5"
+                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5"
               >
                 <span className="min-w-0 truncate text-sm text-slate-200">
-                  {rule?.display_name ?? className}
+                  {rule?.label ?? className}
                 </span>
                 <span
                   className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-[0.6875rem] font-semibold ${bin.border} ${bin.surface} ${bin.text}`}

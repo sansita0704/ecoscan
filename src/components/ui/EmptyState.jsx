@@ -6,11 +6,11 @@ import Button from "./Button";
  * alone - the title and body always carry the meaning.
  */
 const TONES = {
-  neutral: "border-white/10 bg-white/[0.04] text-slate-400",
-  brand: "border-brand-500/30 bg-brand-500/10 text-brand-400",
-  tech: "border-tech-400/30 bg-tech-400/10 text-tech-300",
-  warn: "border-warn-500/30 bg-warn-500/10 text-warn-400",
-  danger: "border-danger-500/30 bg-danger-500/10 text-danger-400",
+  neutral: "border-slate-200 bg-slate-50 text-slate-400",
+  brand: "border-brand-200 bg-brand-50 text-brand-500",
+  tech: "border-blue-200 bg-blue-50 text-blue-500",
+  warn: "border-amber-200 bg-amber-50 text-amber-500",
+  danger: "border-red-200 bg-red-50 text-danger-500",
 };
 
 export default function EmptyState({
@@ -36,8 +36,8 @@ export default function EmptyState({
         </div>
       )}
       <div>
-        <p className="font-semibold text-white">{title}</p>
-        {body && <p className="mx-auto mt-1 max-w-xs text-sm leading-relaxed text-slate-400">{body}</p>}
+        <p className="font-semibold text-slate-800">{title}</p>
+        {body && <p className="mx-auto mt-1 max-w-xs text-sm leading-relaxed text-slate-500">{body}</p>}
       </div>
       {action && onAction && (
         <Button onClick={onAction} icon={actionIcon} variant="secondary" size="sm">

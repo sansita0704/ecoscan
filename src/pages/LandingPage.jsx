@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Cpu, Recycle, ScanLine, ScrollText, Sparkles } from "lucide-react";
+import { BarChart3, BookOpen, Cpu, Recycle, ScanLine, ScrollText } from "lucide-react";
 import HeroScanVisual from "../components/landing/HeroScanVisual";
 import WasteIllustration from "../components/illustrations/WasteIllustration";
 import Button from "../components/ui/Button";
@@ -18,21 +18,20 @@ export default function LandingPage({ onStart, onExplore, stats }) {
       {/* Hero */}
       <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-10">
         <div className="order-2 lg:order-1">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-brand-400">
-            <Sparkles size={11} aria-hidden="true" />
-            Computer vision waste sorting
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-brand-700">
+            Waste sorting, made simple
           </span>
 
-          <h1 className="mt-4 text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl">
+          <h1 className="mt-4 text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900 sm:text-5xl">
             See it. Sort it.
             <br />
-            <span className="bg-gradient-to-r from-brand-400 via-accent-400 to-tech-400 bg-clip-text text-transparent">
+            <span className="text-brand-600">
               Save the planet.
             </span>
           </h1>
 
-          <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-400">
-            EcoScan AI doesn't just identify waste — it tells you exactly what to do with it. Point
+          <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-500">
+            EcoScan identifies everyday waste and tells you what to do with it. Point
             your camera at an item and get the right bin, the prep steps, and the reasoning behind
             both.
           </p>
@@ -49,7 +48,7 @@ export default function LandingPage({ onStart, onExplore, stats }) {
           {stats.total > 0 && (
             <p className="mt-5 text-sm text-slate-500">
               You've sorted{" "}
-              <span className="font-bold text-white">{stats.total}</span>{" "}
+              <span className="font-bold text-slate-800">{stats.total}</span>{" "}
               {stats.total === 1 ? "item" : "items"} so far · {stats.points} EcoPoints
             </p>
           )}
@@ -69,15 +68,15 @@ export default function LandingPage({ onStart, onExplore, stats }) {
             <li key={title}>
               <Card className="h-full p-4">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-brand-500/30 bg-brand-500/10 text-brand-400">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-brand-200 bg-brand-50 text-brand-500">
                     <Icon size={15} aria-hidden="true" />
                   </span>
-                  <span className="text-xs font-bold tabular-nums text-slate-600">
+                  <span className="text-xs font-bold tabular-nums text-slate-300">
                     0{i + 1}
                   </span>
                 </div>
-                <h3 className="mt-3 font-bold text-white">{title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-slate-400">{body}</p>
+                <h3 className="mt-3 font-bold text-slate-800">{title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-slate-500">{body}</p>
               </Card>
             </li>
           ))}
@@ -89,7 +88,7 @@ export default function LandingPage({ onStart, onExplore, stats }) {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-label">What it recognises</h2>
-            <p className="mt-1 text-sm text-slate-400">
+            <p className="mt-1 text-sm text-slate-500">
               Eleven object classes across four material families.
             </p>
           </div>
@@ -103,7 +102,7 @@ export default function LandingPage({ onStart, onExplore, stats }) {
             <li key={m.id}>
               <Card interactive className="flex h-full flex-col items-center gap-2 p-4 text-center">
                 <WasteIllustration id={m.id} tint={m.tint} className="h-16 w-16" />
-                <p className="text-sm font-bold text-white">{m.name}</p>
+                <p className="text-sm font-bold text-slate-800">{m.name}</p>
                 <p className="text-xs leading-relaxed text-slate-500">{m.blurb}</p>
               </Card>
             </li>

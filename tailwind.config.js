@@ -4,51 +4,81 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Deep navy/indigo surfaces. `ink` is the app's canvas and card stack:
-        // darker = further back. Everything else sits on top of these.
+        // Dark surfaces used by the camera and map views.
         ink: {
-          950: "#101230",
-          900: "#171A3A",
-          800: "#1F2347",
-          700: "#242850",
-          600: "#2E3363",
-          500: "#3A4079",
+          950: "#17231E",
+          900: "#22312A",
+          800: "#2B3B33",
+          700: "#3B4B43",
+          600: "#52635A",
+          500: "#718178",
         },
-        // Violet: primary AI interaction. Buttons, active nav, focus.
+        surface: {
+          50: "#FFFFFF",
+          100: "#F8FAFC",
+          200: "#F1F5F9",
+          300: "#E8EFF7",
+          400: "#DDE6F0",
+        },
+        // Muted green: primary product interaction.
         brand: {
-          400: "#A78BFA",
-          500: "#8B5CF6",
-          600: "#7C3AED",
-          700: "#6D28D9",
+          50: "#F1F7F2",
+          100: "#E4F0E7",
+          200: "#C9DECF",
+          300: "#A7C7B0",
+          400: "#82B096",
+          500: "#5E9674",
+          600: "#477A5C",
+          700: "#356046",
         },
-        // Cyan: live/technology states only (streaming, scanning, detecting).
+        // Blue is reserved for live/technology states.
         tech: {
-          300: "#67E8F9",
-          400: "#22D3EE",
-          500: "#06B6D4",
+          50: "#EFF6FF",
+          100: "#DBEAFE",
+          200: "#BFDBFE",
+          300: "#93C5FD",
+          400: "#60A5FA",
+          500: "#3B82F6",
         },
-        // Magenta: sparing emphasis. Never a surface.
+        // Warm terracotta for small accents only.
         accent: {
-          400: "#F472B6",
-          500: "#EC4899",
+          50: "#FEF4F0",
+          100: "#FCE5DC",
+          200: "#F8CABA",
+          400: "#E5A083",
+          500: "#D27C5C",
         },
         blue: { 500: "#3B82F6" },
-        success: { 400: "#4ADE80", 500: "#22C55E", 600: "#16A34A" },
-        warn: { 400: "#FBBF24", 500: "#F59E0B" },
-        danger: { 400: "#F87171", 500: "#EF4444" },
+        success: {
+          50: "#F0FDF4",
+          100: "#DCFCE7",
+          200: "#BBF7D0",
+          400: "#4ADE80",
+          500: "#22C55E",
+          600: "#16A34A",
+        },
+        warn: { 200: "#FDE68A", 400: "#FBBF24", 500: "#F59E0B" },
+        danger: {
+          50: "#FEF2F2",
+          100: "#FEE2E2",
+          200: "#FECACA",
+          400: "#F87171",
+          500: "#EF4444",
+          600: "#DC2626",
+        },
         lavender: "#EDE9FE",
-        paper: "#F8FAFC",
+        paper: "#FFFFFF",
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
-      borderRadius: { xl: "0.875rem", "2xl": "1.125rem", "3xl": "1.5rem" },
+      borderRadius: { xl: "0.75rem", "2xl": "1rem", "3xl": "1.25rem" },
       boxShadow: {
-        card: "0 1px 2px rgba(0,0,0,.28), 0 8px 24px -12px rgba(0,0,0,.5)",
-        lift: "0 12px 32px -12px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06)",
-        glow: "0 0 32px -6px rgba(139,92,246,.45)",
-        "glow-tech": "0 0 28px -6px rgba(34,211,238,.45)",
+        card: "0 1px 2px rgba(21,35,28,0.04), 0 8px 24px -12px rgba(21,35,28,0.18)",
+        lift: "0 16px 30px -14px rgba(21,35,28,0.24)",
+        glow: "0 8px 18px -10px rgba(71,122,92,0.45)",
+        "glow-tech": "0 8px 18px -10px rgba(59,130,246,0.45)",
       },
       keyframes: {
         // Scanner sweep across the camera feed.

@@ -1,7 +1,7 @@
 // Semantic colours for SVG/canvas work, where Tailwind classes don't reach.
 // Keep in step with tailwind.config.js.
-export const BRAND = "#8B5CF6"; // violet - primary AI interaction
-export const DETECTION = "#22D3EE"; // cyan - live detection / technology
+export const BRAND = "#477A5C"; // muted green - primary product interaction
+export const DETECTION = "#3B82F6"; // blue - live detection / technology
 export const SUCCESS = "#22C55E"; // green - recyclable / success
 
 export const LOCATION_LABEL = "Jaipur, IN";

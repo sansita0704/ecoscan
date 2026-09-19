@@ -1,9 +1,9 @@
 const VARIANTS = {
   primary:
-    "bg-brand-600 text-white shadow-glow hover:bg-brand-500 active:bg-brand-700 disabled:shadow-none",
-  secondary: "hairline bg-white/[0.06] text-slate-100 hover:bg-white/[0.11] hover:border-white/20",
-  ghost: "text-slate-300 hover:bg-white/[0.07] hover:text-white",
-  danger: "border border-danger-500/40 bg-danger-500/12 text-danger-400 hover:bg-danger-500/20",
+    "bg-brand-600 text-white shadow-glow hover:bg-brand-700 active:bg-brand-700 disabled:shadow-none",
+  secondary: "hairline bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300",
+  ghost: "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900",
+  danger: "border border-danger-500/40 bg-danger-50 text-danger-600 hover:bg-danger-100",
   success: "bg-success-600 text-white hover:bg-success-500",
 };
 

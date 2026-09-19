@@ -19,7 +19,7 @@ export default function DropoffFinder() {
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-label">Nearest recycling hub</p>
-                <h3 className="mt-1 text-lg font-bold text-white">{hub.name}</h3>
+                <h3 className="mt-1 text-lg font-bold text-slate-800">{hub.name}</h3>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-400">
                   <Badge tone="brand">{hub.distanceKm} km away</Badge>
                   <span className="flex items-center gap-1.5">

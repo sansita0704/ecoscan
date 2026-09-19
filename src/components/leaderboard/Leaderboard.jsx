@@ -4,7 +4,7 @@ import { getLeaderboard } from "../../services/ledgerService";
 import AsyncView from "../ui/AsyncView";
 import Card from "../ui/Card";
 
-const MEDAL = ["text-warn-400", "text-slate-300", "text-accent-400"];
+const MEDAL = ["text-warn-400", "text-slate-400", "text-amber-500"];
 
 export default function Leaderboard() {
   const query = useAsyncData(getLeaderboard);
@@ -14,12 +14,12 @@ export default function Leaderboard() {
       <h2 className="text-label">Community leaderboard</h2>
       <AsyncView query={query} skeletonClassName="h-64">
         {(entries) => (
-          <ol className="mt-3 divide-y divide-white/[0.06]">
+          <ol className="mt-3 divide-y divide-slate-100">
             {entries.map((p, i) => (
               <li
                 key={p.id}
                 className={`flex items-center justify-between gap-4 py-3 ${
-                  p.isYou ? "rounded-lg bg-brand-500/[0.08] px-2" : ""
+                  p.isYou ? "rounded-lg bg-brand-50 px-2" : ""
                 }`}
               >
                 <span className="flex min-w-0 items-center gap-3">
@@ -32,7 +32,7 @@ export default function Leaderboard() {
                   </span>
                   <span
                     className={`truncate font-medium ${
-                      p.isYou ? "text-brand-400" : "text-slate-200"
+                      p.isYou ? "text-brand-600" : "text-slate-700"
                     }`}
                   >
                     {p.name}
@@ -44,7 +44,7 @@ export default function Leaderboard() {
                     <Flame size={13} aria-hidden="true" />
                     {p.streakDays}d
                   </span>
-                  <span className="font-bold tabular-nums text-white">{p.points}</span>
+                  <span className="font-bold tabular-nums text-slate-800">{p.points}</span>
                 </span>
               </li>
             ))}

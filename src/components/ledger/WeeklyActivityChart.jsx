@@ -22,7 +22,7 @@ export default function WeeklyActivityChart({ data }) {
             <div key={`${d.day}-${i}`} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
               <span
                 className={`text-[0.6875rem] font-semibold tabular-nums ${
-                  d.items ? "text-slate-300" : "text-slate-600"
+                  d.items ? "text-slate-600" : "text-slate-300"
                 }`}
               >
                 {d.items}
@@ -30,7 +30,7 @@ export default function WeeklyActivityChart({ data }) {
               <div className="flex w-full flex-1 items-end">
                 <div
                   className={`w-full rounded-md transition-all duration-500 ${
-                    today ? "bg-gradient-to-t from-brand-600 to-brand-400" : "bg-brand-500/25"
+                    today ? "bg-brand-600" : "bg-brand-500/25"
                   }`}
                   style={{ height: `${Math.max(d.items ? 8 : 3, (d.items / max) * 100)}%` }}
                 />

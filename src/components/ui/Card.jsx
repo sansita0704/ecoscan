@@ -1,10 +1,9 @@
 const VARIANTS = {
-  // Default panel: sits on the app canvas.
-  solid: "bg-ink-900/80 hairline shadow-card",
+  solid: "bg-white hairline shadow-card",
   // Slightly lifted surface for nested blocks inside a solid card.
-  inset: "bg-ink-800/60 border border-white/[0.05]",
+  inset: "bg-[#F2F4F0] border border-slate-200/70",
   // Glass is reserved for overlays on top of imagery (camera feed, hero).
-  glass: "bg-ink-900/55 hairline shadow-card backdrop-blur-xl",
+  glass: "bg-white/85 hairline shadow-card backdrop-blur-xl",
 };
 
 export default function Card({

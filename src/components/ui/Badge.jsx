@@ -1,11 +1,11 @@
 const TONES = {
-  brand: "border-brand-500/35 bg-brand-500/12 text-brand-400",
-  tech: "border-tech-400/35 bg-tech-400/12 text-tech-300",
-  green: "border-success-500/35 bg-success-500/12 text-success-400",
-  warn: "border-warn-500/35 bg-warn-500/12 text-warn-400",
-  red: "border-danger-500/35 bg-danger-500/12 text-danger-400",
-  accent: "border-accent-500/35 bg-accent-500/12 text-accent-400",
-  zinc: "border-white/10 bg-white/[0.06] text-slate-300",
+  brand: "border-brand-200 bg-brand-50 text-brand-600",
+  tech: "border-cyan-200 bg-cyan-50 text-cyan-600",
+  green: "border-success-200 bg-success-50 text-success-600",
+  warn: "border-warn-200 bg-amber-50 text-amber-600",
+  red: "border-danger-200 bg-red-50 text-danger-500",
+  accent: "border-pink-200 bg-pink-50 text-pink-600",
+  zinc: "border-slate-200 bg-slate-100 text-slate-600",
 };
 
 export default function Badge({ children, tone = "green", className = "" }) {

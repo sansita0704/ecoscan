@@ -15,8 +15,8 @@ export default function ConfidenceMeter({ confidence = 0 }) {
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-label">AI confidence</span>
-        <span className="text-2xl font-bold tabular-nums tracking-tight text-white">{pct}%</span>
+        <span className="text-label">Match confidence</span>
+        <span className="text-2xl font-bold tabular-nums tracking-tight text-slate-800">{pct}%</span>
       </div>
 
       <div
@@ -32,7 +32,7 @@ export default function ConfidenceMeter({ confidence = 0 }) {
           <span
             key={i}
             className="h-2 flex-1 rounded-[2px] transition-colors duration-300"
-            style={{ backgroundColor: i < filled ? band.hex : "rgba(255,255,255,.09)" }}
+            style={{ backgroundColor: i < filled ? band.hex : "#E2E8F0" }}
           />
         ))}
       </div>

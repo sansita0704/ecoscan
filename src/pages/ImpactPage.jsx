@@ -17,7 +17,7 @@ function BinSplit({ byBin, total }) {
   return (
     <div>
       <h3 className="text-label">Where your items went</h3>
-      <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-white/[0.06]">
+      <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-slate-100">
         {rows.map((bin) => (
           <div
             key={bin.id}
@@ -32,11 +32,11 @@ function BinSplit({ byBin, total }) {
           const Icon = bin.icon;
           return (
             <li key={bin.id} className="flex items-center justify-between gap-3 text-sm">
-              <span className="flex items-center gap-2 text-slate-300">
+              <span className="flex items-center gap-2 text-slate-600">
                 <Icon size={14} className={bin.text} aria-hidden="true" />
                 {bin.label}
               </span>
-              <span className="font-semibold tabular-nums text-white">{byBin[bin.id]}</span>
+              <span className="font-semibold tabular-nums text-slate-800">{byBin[bin.id]}</span>
             </li>
           );
         })}
@@ -60,10 +60,10 @@ function MaterialBreakdown({ byMaterial, total }) {
               <WasteIllustration id={m.id} tint={m.tint} className="h-10 w-10 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="truncate text-sm font-medium text-slate-200">{m.name}</span>
-                  <span className="text-sm font-bold tabular-nums text-white">{count}</span>
+                  <span className="truncate text-sm font-medium text-slate-700">{m.name}</span>
+                  <span className="text-sm font-bold tabular-nums text-slate-800">{count}</span>
                 </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{ width: `${(count / total) * 100}%`, backgroundColor: m.tint }}
@@ -123,10 +123,10 @@ export default function ImpactPage({ stats, onReset, onStartScanning }) {
                 />
                 <div>
                   <p className="text-label">EcoPoints</p>
-                  <p className="mt-1 text-4xl font-extrabold tracking-tight text-white">
+                  <p className="mt-1 text-4xl font-extrabold tracking-tight text-slate-800">
                     {stats.points}
                   </p>
-                  <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-400">
+                  <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
                     <Flame size={14} className="text-warn-400" aria-hidden="true" />
                     {stats.streakDays}-day streak
                   </p>
@@ -151,9 +151,15 @@ export default function ImpactPage({ stats, onReset, onStartScanning }) {
               </div>
             </div>
 
+<<<<<<< HEAD
             <p className="mt-4 text-xs leading-relaxed text-slate-500">
               Points and bin routing are scoring rules in this app, not model outputs. The model
               reports the object class only.
+=======
+            <p className="mt-4 text-xs leading-relaxed text-slate-400">
+              Points are a scoring rule in this app, not a model output. Mass is estimated from
+              average per-class weights in the disposal rules, not measured.
+>>>>>>> d599dcb (refactor: update UI styles and colors across components for improved accessibility and consistency)
             </p>
           </Card>
 
@@ -168,11 +174,11 @@ export default function ImpactPage({ stats, onReset, onStartScanning }) {
 
           <Card className="p-5">
             <h2 className="text-label">Recent scans</h2>
-            <ul className="mt-3 divide-y divide-white/[0.06]">
+            <ul className="mt-3 divide-y divide-slate-100">
               {stats.recent.map((s) => (
                 <li key={s.id} className="flex items-center justify-between gap-3 py-2.5">
-                  <span className="min-w-0 truncate text-sm text-slate-200">{s.className}</span>
-                  <span className="shrink-0 text-xs tabular-nums text-slate-500">
+                  <span className="min-w-0 truncate text-sm text-slate-700">{s.className}</span>
+                  <span className="shrink-0 text-xs tabular-nums text-slate-400">
                     {new Date(s.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </li>
@@ -184,8 +190,8 @@ export default function ImpactPage({ stats, onReset, onStartScanning }) {
 
       <div>
         <div className="mb-3 flex items-center gap-2">
-          <Sparkles size={14} className="text-slate-500" aria-hidden="true" />
-          <p className="text-xs text-slate-500">
+          <Sparkles size={14} className="text-slate-400" aria-hidden="true" />
+          <p className="text-xs text-slate-400">
             Community leaderboard is sample data from the backend — it doesn't reflect real users.
           </p>
         </div>

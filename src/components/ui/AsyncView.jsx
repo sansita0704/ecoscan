@@ -32,9 +32,9 @@ export default function AsyncView({ query, skeletonClassName = "h-40", children 
       <div
         role="status"
         aria-label="Loading"
-        className={`relative overflow-hidden rounded-xl bg-white/[0.04] ${skeletonClassName}`}
+        className={`relative overflow-hidden rounded-xl border border-slate-200 bg-slate-100 ${skeletonClassName}`}
       >
-        <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" />
+        <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent" />
       </div>
     );
   }

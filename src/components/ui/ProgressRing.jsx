@@ -4,7 +4,7 @@ export default function ProgressRing({
   max = 100,
   size = 104,
   stroke = 9,
-  color = "#8B5CF6",
+  color = "#477A5C",
   label,
   caption,
 }) {
@@ -15,7 +15,7 @@ export default function ProgressRing({
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E5EAE5" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -30,8 +30,8 @@ export default function ProgressRing({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-extrabold tabular-nums leading-none text-white">{label}</span>
-        {caption && <span className="mt-1 text-[0.625rem] uppercase tracking-wider text-slate-500">{caption}</span>}
+        <span className="text-xl font-extrabold tabular-nums leading-none text-slate-800">{label}</span>
+        {caption && <span className="mt-1 text-[0.625rem] uppercase tracking-wider text-slate-400">{caption}</span>}
       </div>
     </div>
   );

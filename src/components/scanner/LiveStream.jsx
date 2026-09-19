@@ -136,7 +136,7 @@ export default function LiveStream({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2.5 border-t border-white/[0.06] p-4">
+      <div className="flex flex-wrap items-center gap-2.5 border-t border-slate-200 p-4">
         <ActionButton
           icon={isLive ? CameraOff : Camera}
           label={isLive ? "Stop camera" : "Start camera"}

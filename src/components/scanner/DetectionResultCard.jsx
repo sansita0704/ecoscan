@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import {
   AlertTriangle,
   Loader2,
@@ -7,6 +8,9 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
+=======
+import { Layers, Loader2, QrCode, ScanLine, Weight } from "lucide-react";
+>>>>>>> d599dcb (refactor: update UI styles and colors across components for improved accessibility and consistency)
 import { getMaterial } from "../../config/wasteTaxonomy";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
@@ -54,15 +58,14 @@ export default function DetectionResultCard({
   return (
     <Card className="animate-fade-up overflow-hidden">
       {/* Identity */}
-      <div className="border-b border-white/[0.06] bg-gradient-to-br from-brand-600/[0.16] to-transparent p-5">
+      <div className="border-b border-slate-100 bg-brand-50/60 p-5">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-500/15 px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-brand-400">
-            <Sparkles size={11} aria-hidden="true" />
-            AI detected
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100 px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-brand-600">
+            Detected item
           </span>
         </div>
 
-        <h2 className="mt-2.5 text-2xl font-bold leading-tight tracking-tight text-white">
+        <h2 className="mt-2.5 text-2xl font-bold leading-tight tracking-tight text-slate-800">
           {detection.className}
         </h2>
 
@@ -114,7 +117,7 @@ export default function DetectionResultCard({
         <WhyThisBin detection={detection} />
 
         {tokenStatus === "error" && (
-          <p role="alert" className="text-sm text-danger-400">
+          <p role="alert" className="text-sm text-danger-500">
             Couldn't generate a token. {tokenError?.message}
           </p>
         )}
