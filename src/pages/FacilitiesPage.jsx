@@ -1,0 +1,35 @@
+import { MapPin } from "lucide-react";
+import DropoffFinder from "../components/map/DropoffFinder";
+import PageHeader from "../components/layout/PageHeader";
+import Card from "../components/ui/Card";
+import { BINS } from "../config/wasteTaxonomy";
+
+export default function FacilitiesPage() {
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        icon={MapPin}
+        eyebrow="Drop-off"
+        title="Nearby facilities"
+        subtitle="Where to take items that can't go in a kerbside bin."
+      />
+
+      <DropoffFinder />
+
+      <Card className={`flex items-start gap-3 border p-4 ${BINS.hazardous.border} ${BINS.hazardous.surface}`}>
+        <BINS.hazardous.icon
+          size={18}
+          className={`mt-0.5 shrink-0 ${BINS.hazardous.text}`}
+          aria-hidden="true"
+        />
+        <div>
+          <p className="text-sm font-semibold text-white">Hazardous items need a staffed drop-off</p>
+          <p className="mt-1 text-xs leading-relaxed text-slate-400">
+            Broken glass and other sharps should be wrapped, labelled and handed over in person —
+            never placed in a kerbside bin.
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
+}

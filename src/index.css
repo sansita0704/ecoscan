@@ -1,0 +1,64 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-ink-950 font-sans text-slate-200 antialiased;
+    /* Two very soft violet/cyan pools so the navy canvas has depth instead of
+       reading as flat black. Fixed so it doesn't repaint while scrolling. */
+    background-image:
+      radial-gradient(60rem 40rem at 12% -10%, rgba(124, 58, 237, 0.16), transparent 60%),
+      radial-gradient(48rem 34rem at 92% 0%, rgba(34, 211, 238, 0.09), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  /* One consistent focus ring everywhere, keyboard-only. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-400 ring-offset-2 ring-offset-ink-950;
+  }
+
+  ::selection {
+    @apply bg-brand-500/35 text-white;
+  }
+
+  ::-webkit-scrollbar {
+    @apply h-2 w-2;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-white/10;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-white/20;
+  }
+}
+
+@layer components {
+  /* Hairline that reads as a border on navy without the harshness of a solid line. */
+  .hairline {
+    @apply border border-white/[0.07];
+  }
+
+  .text-label {
+    @apply text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-slate-400;
+  }
+}
+
+/* Honour the OS "reduce motion" setting: kill decorative loops outright rather
+   than merely shortening them, and keep transitions to a perceptible minimum. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
