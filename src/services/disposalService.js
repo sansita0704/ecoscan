@@ -3,7 +3,7 @@ import { request } from "./http";
 import { MOCK_HUB, mockToken, wait } from "./mockData";
 
 /**
- * POST /api/v1/disposal-tokens  { class_name, grade }  ->  { token: "ECO-..." }
+ * POST /api/v1/disposal-tokens  { class_name, bin }  ->  { token: "ECO-..." }
  * @returns {Promise<string>}
  */
 export async function createDisposalToken(detection, { signal } = {}) {
@@ -13,7 +13,10 @@ export async function createDisposalToken(detection, { signal } = {}) {
   }
   const data = await request("/api/v1/disposal-tokens", {
     method: "POST",
-    json: { class_name: detection.className, grade: detection.grade },
+    json: {
+      class_name: detection.rawClass ?? detection.className,
+      bin: detection.bin ?? detection.category,
+    },
     signal,
   });
   return data.token;

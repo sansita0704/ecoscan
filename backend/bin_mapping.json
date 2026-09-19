@@ -1,0 +1,134 @@
+{
+  "battery": {
+    "bin": "Hazardous / E-Waste",
+    "color": "#EF4444",
+    "tip": "Fire hazard! Do NOT throw in normal bins. Take to nearest battery drop-off.",
+    "is_hazardous": true
+  },
+  "can": {
+    "bin": "Dry / Metal",
+    "color": "#6366F1",
+    "tip": "Rinse clean before discarding in the metal bin.",
+    "is_hazardous": false
+  },
+  "cardboard_bowl": {
+    "bin": "Dry / Paper",
+    "color": "#10B981",
+    "tip": "If clean, recycle in paper bin. If heavily grease/food stained, discard in wet waste.",
+    "is_hazardous": false
+  },
+  "cardboard_box": {
+    "bin": "Dry / Paper",
+    "color": "#10B981",
+    "tip": "Flatten box completely to save bin space.",
+    "is_hazardous": false
+  },
+  "chemical_plastic_bottle": {
+    "bin": "Hazardous",
+    "color": "#DC2626",
+    "tip": "Contains chemical residue. Do not mix with domestic recycling.",
+    "is_hazardous": true
+  },
+  "chemical_plastic_gallon": {
+    "bin": "Hazardous",
+    "color": "#DC2626",
+    "tip": "Industrial/hazardous chemical container. Dispose at designated drop-off.",
+    "is_hazardous": true
+  },
+  "chemical_spray_can": {
+    "bin": "Hazardous",
+    "color": "#DC2626",
+    "tip": "Pressurized aerosol hazard! Do not puncture or expose to heat.",
+    "is_hazardous": true
+  },
+  "light_bulb": {
+    "bin": "Hazardous / E-Waste",
+    "color": "#F59E0B",
+    "tip": "May contain mercury or delicate electronics. Handle with care.",
+    "is_hazardous": true
+  },
+  "paint_bucket": {
+    "bin": "Hazardous",
+    "color": "#DC2626",
+    "tip": "Chemical paint residue. Needs special municipal hazardous disposal.",
+    "is_hazardous": true
+  },
+  "plastic_bag": {
+    "bin": "Dry / Soft Plastic",
+    "color": "#3B82F6",
+    "tip": "Clean and bundle together or take to dedicated plastic bag drop-off.",
+    "is_hazardous": false
+  },
+  "plastic_bottle": {
+    "bin": "Dry / Recyclable",
+    "color": "#3B82F6",
+    "tip": "Empty liquids and crush before discarding.",
+    "is_hazardous": false
+  },
+  "plastic_bottle_cap": {
+    "bin": "Dry / Recyclable",
+    "color": "#3B82F6",
+    "tip": "Small plastic item. Screw back onto empty bottle or place in plastic bin.",
+    "is_hazardous": false
+  },
+  "plastic_box": {
+    "bin": "Dry / Recyclable",
+    "color": "#3B82F6",
+    "tip": "Rinse clean and dry before recycling.",
+    "is_hazardous": false
+  },
+  "plastic_cultery": {
+    "bin": "General / Non-Recyclable",
+    "color": "#6B7280",
+    "tip": "Most single-use plastic cutlery cannot be recycled mechanically.",
+    "is_hazardous": false
+  },
+  "plastic_cup": {
+    "bin": "Dry / Recyclable",
+    "color": "#3B82F6",
+    "tip": "Empty contents and rinse liquid out.",
+    "is_hazardous": false
+  },
+  "plastic_cup_lid": {
+    "bin": "Dry / Recyclable",
+    "color": "#3B82F6",
+    "tip": "Separate lid from cup before binning.",
+    "is_hazardous": false
+  },
+  "reuseable_paper": {
+    "bin": "Dry / Paper",
+    "color": "#10B981",
+    "tip": "Reuse for rough work/notes if possible, otherwise recycle dry.",
+    "is_hazardous": false
+  },
+  "scrap_paper": {
+    "bin": "Dry / Paper",
+    "color": "#10B981",
+    "tip": "Keep dry and deposit in the paper recycling bin.",
+    "is_hazardous": false
+  },
+  "scrap_plastic": {
+    "bin": "Dry / Recyclable",
+    "color": "#3B82F6",
+    "tip": "Place in the dry plastic recycling bin.",
+    "is_hazardous": false
+  },
+  "snack_bag": {
+    "bin": "General / Landfill",
+    "color": "#6B7280",
+    "tip": "Multi-layer foil/plastic laminate is rarely recyclable curbside.",
+    "is_hazardous": false
+  },
+  "stick": {
+    "bin": "Wet / Organic",
+    "color": "#22C55E",
+    "tip": "Natural wood / garden waste. Suitable for compost or organic bin.",
+    "is_hazardous": false
+  },
+  "straw": {
+    "bin": "General / Landfill",
+    "color": "#6B7280",
+    "tip": "Too small for standard sorting machinery. Dispose in general waste.",
+    "is_hazardous": false
+  }
+}

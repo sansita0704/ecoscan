@@ -2,6 +2,7 @@ import io
 import logging
 import math
 import os
+import re
 import threading
 import uuid
 from contextlib import asynccontextmanager
@@ -15,7 +16,7 @@ from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 from ultralytics import YOLO
 
-from waste_rules import WASTE_RULES, get_waste_rule
+from waste_rules import BIN_MAPPING, CLASS_NAMES, display_name, get_bin_rule
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("ecoscan")
@@ -39,21 +40,24 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
-# Inference tunables. Defaults match how the checkpoint was trained (imgsz=640).
-CONF_THRESHOLD = _env_float("ECOSCAN_CONF", 0.35)
+# Inference tunables. Tuned for cluttered multi-item frames: a higher imgsz
+# catches small items (caps, batteries, scrap paper), a lower conf keeps more
+# than just the single most obvious item, and iou=0.45 stops adjacent items
+# of different classes from suppressing each other in NMS.
+CONF_THRESHOLD = _env_float("ECOSCAN_CONF", 0.25)
 IOU_THRESHOLD = _env_float("ECOSCAN_IOU", 0.45)
-IMG_SIZE = _env_int("ECOSCAN_IMGSZ", 640)
-MAX_DET = _env_int("ECOSCAN_MAX_DET", 20)
+IMG_SIZE = _env_int("ECOSCAN_IMGSZ", 960)
+MAX_DET = _env_int("ECOSCAN_MAX_DET", 40)
 MAX_UPLOAD_BYTES = _env_int("ECOSCAN_MAX_UPLOAD_BYTES", 8 * 1024 * 1024)
 # Two boxes of different classes overlapping this much are the same physical object.
 CROSS_CLASS_IOU = _env_float("ECOSCAN_CROSS_CLASS_IOU", 0.80)
 DEVICE = os.getenv("ECOSCAN_DEVICE") or None
 
+# The fine-tuned 22-class YOLOv8 checkpoint (see backend/bin_mapping.json for
+# the bin-routing rules). taco_best.pt is kept on disk but no longer loaded.
 MODEL_CANDIDATES = [
-    BASE_DIR / "models" / "taco_best.pt",
-    BASE_DIR / "models" / "ecoscan_best (1).pt",
-    Path("backend/models/taco_best.pt"),
-    Path("backend/models/ecoscan_best (1).pt"),
+    BASE_DIR / "models" / "best.pt",
+    Path("backend/models/best.pt"),
 ]
 
 # Ultralytics predict() mutates per-model state, so it is not safe to run the
@@ -88,11 +92,25 @@ def _run_inference(image: Image.Image):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     model_path = resolve_model_path()
-    logger.info("Loading TACO YOLO model from: %s", model_path)
+    logger.info("Loading EcoScan YOLOv8 model from: %s", model_path)
     app.state.model = YOLO(str(model_path))
     app.state.classes = app.state.model.names
     app.state.model_path = str(model_path)
     logger.info("Model loaded with %d classes: %s", len(app.state.classes), app.state.classes)
+
+    loaded_names = set(app.state.classes.values()) if isinstance(app.state.classes, dict) else set(app.state.classes)
+    missing = [c for c in CLASS_NAMES if c not in loaded_names]
+    if missing:
+        logger.warning(
+            "Checkpoint is missing %d expected class(es) vs. the documented taxonomy: %s",
+            len(missing), missing,
+        )
+    unmapped = [c for c in loaded_names if c not in BIN_MAPPING]
+    if unmapped:
+        logger.warning(
+            "%d checkpoint class(es) have no bin_mapping.json entry (will use the default rule): %s",
+            len(unmapped), sorted(unmapped),
+        )
 
     # The first predict() call builds lazy state and takes seconds; do it now so
     # the first real camera frame is fast instead of stalling the live scanner.
@@ -109,8 +127,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="EcoScan AI Backend",
-    version="1.1.0",
-    description="Waste classification backend powered by Ultralytics YOLO & TACO dataset",
+    version="2.0.0",
+    description="Waste classification backend powered by a fine-tuned Ultralytics YOLOv8 model (22-class taxonomy)",
     lifespan=lifespan,
 )
 
@@ -189,7 +207,13 @@ def _prominence(confidence: float, box: Dict[str, float]) -> float:
     return confidence * (0.55 + 0.45 * size) * (0.78 + 0.22 * centrality)
 
 
-def _extract_detections(result, names) -> List[Dict[str, Any]]:
+def _extract_detections(result, names, frame_w: int, frame_h: int) -> List[Dict[str, Any]]:
+    """Parse one Ultralytics result into the standardized detection payload.
+
+    `bbox` is pixel-space [x1, y1, x2, y2] against the uploaded frame's own
+    width/height (returned alongside as `frame`), matching what the bounding
+    box overlay expects.
+    """
     boxes = result.boxes
     if boxes is None or len(boxes) == 0:
         return []
@@ -201,13 +225,13 @@ def _extract_detections(result, names) -> List[Dict[str, Any]]:
     detections: List[Dict[str, Any]] = []
     for (x1, y1, x2, y2), conf, cls_id in zip(xyxyn, confs, class_ids):
         x1, y1, x2, y2 = (max(0.0, min(1.0, float(v))) for v in (x1, y1, x2, y2))
-        box = {
+        norm_box = {
             "x": round(x1, 4),
             "y": round(y1, 4),
             "w": round(max(0.0, x2 - x1), 4),
             "h": round(max(0.0, y2 - y1), 4),
         }
-        if box["w"] <= 0 or box["h"] <= 0:
+        if norm_box["w"] <= 0 or norm_box["h"] <= 0:
             continue
 
         cls_id = int(cls_id)
@@ -217,30 +241,37 @@ def _extract_detections(result, names) -> List[Dict[str, Any]]:
             class_name = names[cls_id] if 0 <= cls_id < len(names) else f"class_{cls_id}"
 
         confidence = round(float(conf), 3)
-        rule = get_waste_rule(class_name)
+        rule = get_bin_rule(class_name)
+        pixel_bbox = [
+            round(x1 * frame_w, 1),
+            round(y1 * frame_h, 1),
+            round(x2 * frame_w, 1),
+            round(y2 * frame_h, 1),
+        ]
         detections.append(
             {
-                "class_name": class_name,
-                "class_id": cls_id,
-                "label": rule["label"],
-                "category": rule["category"],
+                "label": class_name,
+                "display_name": display_name(class_name),
                 "confidence": confidence,
-                "weight_g": rule["weight_g"],
-                "material_grade": rule["material_grade"],
-                "contamination": rule["contamination"],
-                "steps": rule["steps"],
-                "bbox": box,
-                "score": round(_prominence(float(conf), box), 4),
+                "bbox": pixel_bbox,
+                "bin": rule["bin"],
+                "color": rule["color"],
+                "tip": rule["tip"],
+                "is_hazardous": bool(rule["is_hazardous"]),
+                # Kept for internal ranking/de-dup only; stripped before the
+                # response is sent (see detect_waste below).
+                "_norm_box": norm_box,
+                "_score": round(_prominence(float(conf), norm_box), 4),
             }
         )
 
-    detections.sort(key=lambda d: d["score"], reverse=True)
+    detections.sort(key=lambda d: d["_score"], reverse=True)
 
     # NMS runs per class, so one physical item can come back as two classes
-    # (a bottle read as both plastic_bottle and glass_bottle). Keep the stronger.
+    # (e.g. read as both plastic_bottle and plastic_cup). Keep the stronger.
     kept: List[Dict[str, Any]] = []
     for det in detections:
-        if any(_iou(det["bbox"], k["bbox"]) >= CROSS_CLASS_IOU for k in kept):
+        if any(_iou(det["_norm_box"], k["_norm_box"]) >= CROSS_CLASS_IOU for k in kept):
             continue
         kept.append(det)
     return kept
@@ -250,9 +281,27 @@ def _extract_detections(result, names) -> List[Dict[str, Any]]:
 async def detect_waste(frame: UploadFile = File(...)):
     """
     Accepts multipart image field 'frame'.
-    Runs YOLO inference and returns the most prominent detected item at the top
-    level (label, category, confidence, bbox, preparation steps) plus every other
-    detection in `detections`. `label` is absent when nothing was found.
+    Runs YOLO inference and returns every detected item as a standardized
+    detection so the frontend can render all of them at once:
+
+    {
+      "total_items": 2,
+      "detections": [
+        {
+          "label": "plastic_bottle",
+          "display_name": "Plastic Bottle",
+          "confidence": 0.88,
+          "bbox": [112.5, 45.0, 320.0, 410.5],
+          "bin": "Dry / Recyclable",
+          "color": "#3B82F6",
+          "tip": "Empty liquids and crush before discarding.",
+          "is_hazardous": false
+        }
+      ],
+      "frame": { "w": 960, "h": 720 }
+    }
+
+    Detections are ordered most-prominent-first (confidence + size + framing).
     """
     if getattr(app.state, "model", None) is None:
         raise HTTPException(status_code=503, detail="YOLO model is not initialized")
@@ -264,7 +313,7 @@ async def detect_waste(frame: UploadFile = File(...)):
 
     image_bytes = await frame.read()
     if not image_bytes:
-        return {"detections": [], "frame": None}
+        return {"total_items": 0, "detections": [], "frame": None}
     if len(image_bytes) > MAX_UPLOAD_BYTES:
         raise HTTPException(
             status_code=413, detail=f"Frame exceeds {MAX_UPLOAD_BYTES} byte limit"
@@ -287,26 +336,22 @@ async def detect_waste(frame: UploadFile = File(...)):
 
     frame_info = {"w": image.width, "h": image.height}
     if not results:
-        return {"detections": [], "frame": frame_info}
+        return {"total_items": 0, "detections": [], "frame": frame_info}
 
-    detections = _extract_detections(results[0], app.state.model.names)
-    if not detections:
-        return {"detections": [], "frame": frame_info}
+    detections = _extract_detections(results[0], app.state.model.names, image.width, image.height)
+    if detections:
+        logger.debug(
+            "Detected %d item(s): %s",
+            len(detections),
+            ", ".join(f"{d['label']} ({d['confidence']:.2f})" for d in detections),
+        )
 
-    primary = detections[0]
-    logger.debug(
-        "Detected %s (%.2f) + %d other(s)",
-        primary["class_name"],
-        primary["confidence"],
-        len(detections) - 1,
-    )
-    # The full rule (steps, contamination, weight) rides on the top level only;
-    # `detections` stays lean because it is re-sent several times a second.
-    summary = [
-        {k: d[k] for k in ("class_name", "label", "category", "confidence", "bbox", "score")}
+    # Strip internal ranking fields before the response goes out.
+    public_detections = [
+        {k: d[k] for k in ("label", "display_name", "confidence", "bbox", "bin", "color", "tip", "is_hazardous")}
         for d in detections
     ]
-    return {**primary, "detections": summary, "frame": frame_info}
+    return {"total_items": len(public_detections), "detections": public_detections, "frame": frame_info}
 
 
 # =========================================================================
@@ -323,23 +368,34 @@ async def get_waste_rules():
     """
     classes = getattr(app.state, "classes", {}) or {}
     known = list(classes.values()) if isinstance(classes, dict) else list(classes)
+    names = known or list(BIN_MAPPING.keys())
     return {
-        "classes": known,
-        "rules": {name: get_waste_rule(name) for name in (known or WASTE_RULES.keys())},
+        "classes": names,
+        "rules": {
+            name: {"display_name": display_name(name), **get_bin_rule(name)}
+            for name in names
+        },
     }
 
 
 class DisposalTokenRequest(BaseModel):
     class_name: Optional[str] = None
+    bin: Optional[str] = None
+    # Older clients sent a material grade; still accepted as a code source.
     grade: Optional[str] = None
 
 
 @app.post("/api/v1/disposal-tokens")
 async def create_disposal_token(req: DisposalTokenRequest):
-    """Generate QR disposal token for detected waste item."""
-    grade = (req.grade or "GEN").replace(" ", "-")
+    """Generate QR disposal token for detected waste item.
+
+    The new taxonomy has no material grade, so the class name is the code of
+    choice; `grade` is still accepted for older clients.
+    """
+    source = req.class_name or req.grade or "GEN"
+    code = re.sub(r"[^A-Z0-9]+", "-", str(source).upper()).strip("-") or "GEN"
     rand_code = uuid.uuid4().hex[:6].upper()
-    return {"token": f"ECO-{grade}-{rand_code}"}
+    return {"token": f"ECO-{code}-{rand_code}"}
 
 
 @app.get("/api/v1/hubs/nearest")

@@ -29,10 +29,19 @@ export function buildPrompt(input) {
     "",
     "RULE TABLE VALUES for that class (static defaults, not observations):",
     `- RULE display label: ${detection.label}`,
-    `- RULE disposal category: ${detection.category}`,
-    `- RULE material grade: ${detection.materialGrade}`,
-    `- RULE typical weight for this class: ${detection.weightG} g`,
+    `- RULE bin routing: ${detection.category}`,
   ];
+
+  if (detection.isHazardous) {
+    lines.push("- RULE hazard flag: this class is flagged for hazardous / special handling.");
+  }
+  // The 22-class bin mapping carries no grade or weight; older payloads may.
+  if (detection.materialGrade && detection.materialGrade !== "unknown") {
+    lines.push(`- RULE material grade: ${detection.materialGrade}`);
+  }
+  if (detection.weightG != null) {
+    lines.push(`- RULE typical weight for this class: ${detection.weightG} g`);
+  }
 
   if (c) {
     lines.push(

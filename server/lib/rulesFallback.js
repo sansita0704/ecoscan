@@ -8,22 +8,41 @@
  * so the UI can be honest about which path produced it.
  */
 
+/**
+ * Map a bin string from backend/bin_mapping.json onto a disposal stream.
+ * "Dry / Metal", "Dry / Paper" and "Wet / Organic" are all diversion routes,
+ * so none of them may fall through to general waste.
+ */
 function binFor(category = "") {
   const c = String(category).toLowerCase();
-  if (c.includes("hazard")) {
+  if (c.includes("hazard") || c.includes("e-waste")) {
     return { bin: "Designated hazardous drop-off", stream: "Hazardous", hazardous: true };
   }
-  if (c.includes("recyclable") && !c.includes("non-recyclable")) {
-    return { bin: "Dry recyclables bin", stream: "Dry recyclable", hazardous: false };
+  if (c.includes("organic") || c.includes("compost") || c.includes("wet")) {
+    return { bin: "Compost / wet-waste bin", stream: "Organic", hazardous: false };
   }
-  if (c.includes("landfill") || c.includes("general") || c.includes("mixed")) {
+  if (c.includes("non-recyclable") || c.includes("landfill") || c.includes("general") || c.includes("mixed")) {
     return { bin: "General waste bin", stream: "General waste", hazardous: false };
+  }
+  if (c.includes("metal")) {
+    return { bin: "Metal recycling bin", stream: "Dry recyclable", hazardous: false };
+  }
+  if (c.includes("paper") || c.includes("card")) {
+    return { bin: "Paper & card recycling", stream: "Dry recyclable", hazardous: false };
+  }
+  if (c.includes("soft plastic")) {
+    return { bin: "Soft-plastic drop-off", stream: "Dry recyclable", hazardous: false };
+  }
+  if (c.includes("recyclable") || c.includes("dry")) {
+    return { bin: "Dry recyclables bin", stream: "Dry recyclable", hazardous: false };
   }
   return { bin: "Check local guidance", stream: "Unknown", hazardous: false };
 }
 
 export function rulesAdvice({ detection, material }) {
-  const { bin, stream, hazardous } = binFor(detection.category);
+  const routed = binFor(detection.category);
+  const { bin, stream } = routed;
+  const hazardous = detection.isHazardous || routed.hazardous;
   const risk = detection.contamination;
   const highRisk = hazardous || (risk && (risk.score >= 0.6 || String(risk.level).toLowerCase() === "high"));
 
@@ -34,6 +53,19 @@ export function rulesAdvice({ detection, material }) {
       title: "Take to a hazardous drop-off",
       detail: "This class is flagged for special handling in the disposal rules.",
       suitability: "recommended",
+    });
+  } else if (stream === "Organic") {
+    actions.push({
+      type: "compost",
+      title: "Put it in the compost / wet-waste bin",
+      detail: `The rules classify this as ${detection.category}.`,
+      suitability: "recommended",
+    });
+    actions.push({
+      type: "recycle",
+      title: "Dry recycling",
+      detail: "Organic matter contaminates dry recycling loads.",
+      suitability: "not_advised",
     });
   } else if (stream === "Dry recyclable") {
     actions.push({
@@ -73,9 +105,19 @@ export function rulesAdvice({ detection, material }) {
     },
     actions,
     preparation: detection.steps?.length ? [...detection.steps] : ["Check the item before disposal."],
-    safety: highRisk && risk ? `${risk.level} risk: ${risk.label}. Handle with care.` : null,
+    safety: risk && highRisk
+      ? `${risk.level} risk: ${risk.label}. Handle with care.`
+      : hazardous
+        ? "Flagged as hazardous in the disposal rules. Do not place it in a kerbside bin, and keep it away from heat and damage."
+        : null,
     finalAction: {
-      type: hazardous ? "special_disposal" : stream === "Dry recyclable" ? "recycle" : "general_disposal",
+      type: hazardous
+        ? "special_disposal"
+        : stream === "Dry recyclable"
+          ? "recycle"
+          : stream === "Organic"
+            ? "compost"
+            : "general_disposal",
       why: `Based on the configured disposal rule for ${detection.className}.`,
     },
     material,

@@ -57,6 +57,7 @@ function parseInput(raw) {
       label: String(d.label ?? d.className),
       confidence,
       category: String(d.category ?? ""),
+      isHazardous: d.isHazardous === true,
       materialGrade: String(d.materialGrade ?? "unknown"),
       weightG: Number.isFinite(Number(d.weightG)) ? Number(d.weightG) : null,
       contamination: d.contamination ?? null,
@@ -115,7 +116,9 @@ export async function handleAdvice(rawBody, { signal } = {}) {
     };
   }
 
-  const hazardous = HAZARD_HINT(detection.category);
+  // The bin mapping states the hazard flag outright; the category string is
+  // only a fallback for clients that don't send it.
+  const hazardous = detection.isHazardous || HAZARD_HINT(detection.category);
 
   // Advice and facilities are independent; run them together. Facilities never
   // fail the request - a missing maps result just yields an empty list.

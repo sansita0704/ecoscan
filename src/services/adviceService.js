@@ -21,12 +21,11 @@ export async function getDisposalAdvice(detection, { material, location } = {}, 
         // Real model output
         className: detection.rawClass ?? detection.className,
         confidence: detection.confidence,
-        // Rule-table values, passed through so the model can build on them
+        // Rule-table values (backend/bin_mapping.json), passed through so the
+        // model can build on them rather than inventing its own routing.
         label: detection.className,
-        category: detection.category,
-        materialGrade: detection.grade,
-        weightG: detection.weightG,
-        contamination: detection.contamination,
+        category: detection.bin ?? detection.category,
+        isHazardous: detection.isHazardous,
         steps: detection.steps,
       },
       material: material ?? null,

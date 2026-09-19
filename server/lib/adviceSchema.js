@@ -15,6 +15,7 @@ export const ACTION_TYPES = [
   "repair",
   "repurpose",
   "recycle",
+  "compost",
   "special_disposal",
   "general_disposal",
 ];

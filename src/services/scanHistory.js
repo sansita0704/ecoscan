@@ -41,8 +41,7 @@ export function recordScan(detection, scans = loadScans()) {
     at: Date.now(),
     className: detection.className,
     rawClass: detection.rawClass,
-    category: detection.category,
-    weightG: typeof detection.weightG === "number" ? detection.weightG : 0,
+    category: detection.bin ?? detection.category,
     confidence: detection.confidence,
   };
   const next = [...scans, entry].slice(-LIMIT);
@@ -79,13 +78,11 @@ export function summarise(scans) {
   const byMaterial = {};
   const days = new Set();
   let points = 0;
-  let grams = 0;
 
   for (const s of scans) {
     const bin = getBin(s.category);
     byBin[bin.id] += 1;
     points += POINTS_BY_BIN[bin.id] ?? 1;
-    grams += s.weightG || 0;
     days.add(dayKey(s.at));
     const material = MATERIAL_BY_CLASS[s.rawClass];
     if (material) byMaterial[material] = (byMaterial[material] ?? 0) + 1;
@@ -108,7 +105,6 @@ export function summarise(scans) {
   return {
     total: scans.length,
     points,
-    grams: Math.round(grams),
     diverted,
     divertedPct: scans.length ? Math.round((diverted / scans.length) * 100) : 0,
     byBin,

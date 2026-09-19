@@ -54,7 +54,7 @@ export default function WasteCategoryCard({ material, count = 0, expanded, onTog
         <ul id={panelId} className="animate-fade-in space-y-2 border-t border-white/[0.06] p-4">
           {material.classes.map((className) => {
             const rule = ruleFor(className);
-            const bin = getBin(rule?.category);
+            const bin = getBin(rule?.bin);
             const Icon = bin.icon;
             return (
               <li
@@ -62,7 +62,7 @@ export default function WasteCategoryCard({ material, count = 0, expanded, onTog
                 className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.05] bg-ink-800/50 px-3 py-2.5"
               >
                 <span className="min-w-0 truncate text-sm text-slate-200">
-                  {rule?.label ?? className}
+                  {rule?.display_name ?? className}
                 </span>
                 <span
                   className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 text-[0.6875rem] font-semibold ${bin.border} ${bin.surface} ${bin.text}`}

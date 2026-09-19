@@ -5,25 +5,22 @@
  */
 
 /**
+ * One detected item. The top level of a detection response is the most
+ * prominent item, spread over the same shape.
+ *
  * @typedef {Object} Detection
- * @property {string} className          human label, e.g. "PET Plastic Bottle"
+ * @property {string} className          human label, e.g. "Plastic Bottle"
  * @property {string} rawClass           model class id, e.g. "plastic_bottle"
- * @property {string} category           e.g. "Dry / Recyclable"
+ * @property {string} bin                bin routing, e.g. "Dry / Recyclable"
+ * @property {string} category           alias of `bin` (kept for the advice + log paths)
+ * @property {string} color              hex accent for this class, e.g. "#3B82F6"
+ * @property {string} tip                one-line disposal guidance
+ * @property {boolean} isHazardous       needs special / hazardous handling
  * @property {number} confidence         0..1
- * @property {number} weightG            estimated grams
- * @property {string} grade              e.g. "PET-01"
- * @property {{level: string, label: string, score: number}} contamination  score 0..1
- * @property {string[]} steps            preparation checklist
+ * @property {string[]} steps            preparation checklist (currently `[tip]`)
  * @property {{x: number, y: number, w: number, h: number}} box  normalised 0..1, top-left origin
- * @property {DetectionBox[]} [detections]  every box in the frame, this one first
- */
-
-/**
- * @typedef {Object} DetectionBox
- * @property {string} className
- * @property {string} category
- * @property {number} confidence         0..1
- * @property {{x: number, y: number, w: number, h: number}} box  normalised 0..1
+ * @property {number} [totalItems]       how many items the backend found in the frame
+ * @property {Detection[]} [detections]  every item in the frame, this one first
  */
 
 /**

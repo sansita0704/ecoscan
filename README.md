@@ -96,11 +96,12 @@ arrives.
 
 ## What is AI, and what is a rule
 
-The model returns exactly three things: an object **class** (one of eleven), a
-**confidence**, and a **bounding box**. Everything else the UI shows — the human
-label, material grade, category, estimated weight, preparation risk and the prep
-steps — is a lookup in `backend/waste_rules.py`. Bin mapping and material
-families are frontend rules in `config/wasteTaxonomy.js`.
+The model returns exactly three things: an object **class** (one of twenty-two),
+a **confidence**, and a **bounding box**. Everything else the UI shows — the
+display name, the bin, the colour, the hazard flag and the prep tip — is a lookup
+in `backend/bin_mapping.json` (loaded by `backend/waste_rules.py`). Bin
+presentation and material families are frontend rules in
+`config/wasteTaxonomy.js`.
 
 The UI is written to keep that line visible: the "Why this bin?" panel on every
 result spells out the three stages, and preparation risk is labelled as guidance
@@ -132,9 +133,10 @@ The backend reads these optional environment variables:
 | Variable | Default | Purpose |
 |---|---|---|
 | `ECOSCAN_MODEL_PATH` | auto-discovered in `backend/models/` | Checkpoint to load |
-| `ECOSCAN_CONF` | `0.35` | Minimum confidence to report a detection |
-| `ECOSCAN_IOU` | `0.45` | NMS IoU threshold |
-| `ECOSCAN_IMGSZ` | `640` | Inference size (the size the model was trained at) |
+| `ECOSCAN_CONF` | `0.25` | Minimum confidence to report a detection |
+| `ECOSCAN_IOU` | `0.45` | NMS IoU threshold (keeps adjacent items apart) |
+| `ECOSCAN_IMGSZ` | `960` | Inference size (higher = small items survive) |
+| `ECOSCAN_MAX_DET` | `40` | Cap on detections per frame |
 | `ECOSCAN_DEVICE` | auto | e.g. `cpu`, `0` for the first GPU |
 | `ECOSCAN_CORS_ORIGINS` | localhost + LAN | Comma-separated allowlist |
 
@@ -151,24 +153,39 @@ UI shape, so only that one function changes if your format differs.
 | EcoPoints summary | `GET /api/v1/ledger/summary` | `ledgerService.getLedgerSummary` |
 | Leaderboard | `GET /api/v1/leaderboard` | `ledgerService.getLeaderboard` |
 
-`/detect` response. The top level describes the most prominent item; `detections`
-lists every box with that item first. Omit `label` when nothing is found. `bbox`
-is normalised 0..1 with a top-left origin, measured on the un-mirrored frame:
+`/detect` response. `detections` lists every item in the frame, most prominent
+first, and is empty when nothing is found. `bbox` is pixel-space
+`[x1, y1, x2, y2]` measured on the un-mirrored frame whose size is in `frame`:
 ```json
 {
-  "label": "PET Plastic Bottle", "category": "Dry / Recyclable",
-  "confidence": 0.964, "weight_g": 28.5, "material_grade": "PET-01",
-  "contamination": { "level": "Low", "label": "Clean", "score": 0.14 },
-  "steps": ["Unscrew cap & separate collar.", "..."],
-  "bbox": { "x": 0.34, "y": 0.22, "w": 0.26, "h": 0.56 },
+  "total_items": 2,
   "detections": [
-    { "class_name": "plastic_bottle", "label": "PET Plastic Bottle",
-      "category": "Dry / Recyclable", "confidence": 0.964,
-      "bbox": { "x": 0.34, "y": 0.22, "w": 0.26, "h": 0.56 }, "score": 0.71 }
+    {
+      "label": "plastic_bottle",
+      "display_name": "Plastic Bottle",
+      "confidence": 0.88,
+      "bbox": [112.5, 45.0, 320.0, 410.5],
+      "bin": "Dry / Recyclable",
+      "color": "#3B82F6",
+      "tip": "Empty liquids and crush before discarding.",
+      "is_hazardous": false
+    },
+    {
+      "label": "battery",
+      "display_name": "Battery",
+      "confidence": 0.41,
+      "bbox": [768.0, 504.0, 844.8, 576.0],
+      "bin": "Hazardous / E-Waste",
+      "color": "#EF4444",
+      "tip": "Fire hazard! Do NOT throw in normal bins. Take to nearest battery drop-off.",
+      "is_hazardous": true
+    }
   ],
-  "frame": { "w": 640, "h": 480 }
+  "frame": { "w": 960, "h": 720 }
 }
 ```
+`detectionService` converts each `bbox` to normalised 0..1 coordinates for the
+overlay, and `detections[0]` becomes the headline item in the result panel.
 "Most prominent" is not simply the top confidence: a large, centred object beats
 a marginally more confident speck in a corner, since that is the item the user is
 holding up to the camera.

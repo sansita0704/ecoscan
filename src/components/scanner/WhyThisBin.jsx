@@ -29,7 +29,7 @@ function Step({ icon: Icon, tone, title, children }) {
  */
 export default function WhyThisBin({ detection }) {
   const [open, setOpen] = useState(false);
-  const bin = getBin(detection.category);
+  const bin = getBin(detection.bin ?? detection.category);
   const pct = Math.round(detection.confidence * 100);
 
   return (
@@ -72,10 +72,10 @@ export default function WhyThisBin({ detection }) {
             tone="border-brand-500/30 bg-brand-500/10 text-brand-400"
             title="2 · Waste rule"
           >
-            A configured rule table maps that class to{" "}
-            <span className="font-medium text-slate-200">{detection.category}</span>, material grade{" "}
-            <span className="font-medium text-slate-200">{detection.grade}</span>, and its
-            preparation steps. This is a lookup, not a second prediction.
+            A configured bin mapping (bin_mapping.json) routes that class to{" "}
+            <span className="font-medium text-slate-200">{detection.bin ?? detection.category}</span>
+            {detection.isHazardous ? ", flagged for hazardous handling," : ""} along with its
+            preparation tip. This is a lookup, not a second prediction.
           </Step>
 
           <Step
@@ -89,9 +89,8 @@ export default function WhyThisBin({ detection }) {
 
           <li className="border-t border-white/[0.06] pt-3">
             <p className="text-xs leading-relaxed text-slate-500">
-              The model reports the object class, its confidence and a bounding box. Material,
-              weight, risk level and preparation steps are rule-based guidance rather than
-              measurements.
+              The model reports the object class, its confidence and a bounding box. The bin, the
+              hazard flag and the preparation tip are rule-based guidance rather than measurements.
             </p>
           </li>
         </ol>

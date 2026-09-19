@@ -16,43 +16,45 @@ export function wait(ms, signal) {
   });
 }
 
+// Already in the UI's Detection shape (see src/types/contracts.js): the mock
+// path bypasses the backend adapter. Two items, in different bins, so the
+// multi-box overlay and the "separate before disposal" notice both show up.
 export const MOCK_DETECTION = {
-  className: "PET Plastic Bottle",
+  className: "Plastic Bottle",
   rawClass: "plastic_bottle",
+  bin: "Dry / Recyclable",
   category: "Dry / Recyclable",
+  color: "#3B82F6",
+  tip: "Empty liquids and crush before discarding.",
+  isHazardous: false,
   confidence: 0.964,
-  weightG: 28.5,
-  grade: "PET-01",
-  contamination: { level: "Low", label: "Clean", score: 0.14 },
-  steps: [
-    "Unscrew cap & separate collar.",
-    "Rinse container of left-over liquid.",
-    "Place bottle in Blue Dry-Waste Bin.",
-  ],
+  steps: ["Empty liquids and crush before discarding."],
   box: { x: 0.34, y: 0.22, w: 0.26, h: 0.56 },
+};
+
+const MOCK_SECONDARY = {
+  className: "Battery",
+  rawClass: "battery",
+  bin: "Hazardous / E-Waste",
+  category: "Hazardous / E-Waste",
+  color: "#EF4444",
+  tip: "Fire hazard! Do NOT throw in normal bins. Take to nearest battery drop-off.",
+  isHazardous: true,
+  confidence: 0.781,
+  steps: ["Fire hazard! Do NOT throw in normal bins. Take to nearest battery drop-off."],
+  box: { x: 0.68, y: 0.54, w: 0.11, h: 0.19 },
 };
 
 export async function mockDetect(signal) {
   await wait(12 + Math.random() * 6, signal);
   const jitter = () => (Math.random() - 0.5) * 0.016;
-  const box = {
-    ...MOCK_DETECTION.box,
-    x: MOCK_DETECTION.box.x + jitter(),
-    y: MOCK_DETECTION.box.y + jitter(),
-  };
-  return {
-    ...MOCK_DETECTION,
-    box,
-    detections: [
-      {
-        className: MOCK_DETECTION.className,
-        rawClass: MOCK_DETECTION.rawClass,
-        category: MOCK_DETECTION.category,
-        confidence: MOCK_DETECTION.confidence,
-        box,
-      },
-    ],
-  };
+  const drift = (item) => ({
+    ...item,
+    box: { ...item.box, x: item.box.x + jitter(), y: item.box.y + jitter() },
+  });
+
+  const items = [drift(MOCK_DETECTION), drift(MOCK_SECONDARY)];
+  return { ...items[0], totalItems: items.length, detections: items };
 }
 
 export const MOCK_LEDGER = {
@@ -73,32 +75,51 @@ export const MOCK_LEDGER = {
 };
 
 // Mirrors the shape of GET /api/v1/waste-rules for the no-backend demo path.
-const RULE = (label, category, grade) => ({
-  label,
-  category,
-  material_grade: grade,
-  weight_g: 0,
-  contamination: { level: "Low", label: "Unknown", score: 0.1 },
-  steps: [],
+// Keep in step with backend/bin_mapping.json (the 22-class taxonomy).
+const RULE = (displayName, bin, color, hazardous = false) => ({
+  display_name: displayName,
+  bin,
+  color,
+  tip: "",
+  is_hazardous: hazardous,
 });
+
+const RECYCLABLE = "#3B82F6";
+const PAPER = "#10B981";
+const GENERAL = "#6B7280";
+const HAZARD = "#DC2626";
 
 export const MOCK_WASTE_RULES = {
   classes: [
-    "plastic_bottle", "wrapper", "can", "carton", "cup",
-    "bottle_cap", "glass_bottle", "straw", "broken_glass", "styrofoam", "pop_tab",
+    "battery", "can", "cardboard_bowl", "cardboard_box", "chemical_plastic_bottle",
+    "chemical_plastic_gallon", "chemical_spray_can", "light_bulb", "paint_bucket",
+    "plastic_bag", "plastic_bottle", "plastic_bottle_cap", "plastic_box",
+    "plastic_cultery", "plastic_cup", "plastic_cup_lid", "reuseable_paper",
+    "scrap_paper", "scrap_plastic", "snack_bag", "stick", "straw",
   ],
   rules: {
-    plastic_bottle: RULE("PET Plastic Bottle", "Dry / Recyclable", "PET-01"),
-    wrapper: RULE("Food Wrapper / Film", "Non-Recyclable / Landfill", "Multi-layer Plastic"),
-    can: RULE("Aluminum Beverage Can", "Dry / Recyclable", "ALU-41"),
-    carton: RULE("Beverage / Liquid Carton", "Dry / Recyclable", "TetraPak / PAP-21"),
-    cup: RULE("Disposable Coffee / Drink Cup", "Mixed / Landfill", "PAP-PE Composite"),
-    bottle_cap: RULE("Plastic Bottle Cap", "Dry / Recyclable", "HDPE-02"),
-    glass_bottle: RULE("Glass Bottle / Jar", "Dry / Recyclable", "GL-70"),
-    straw: RULE("Plastic Straw", "Non-Recyclable / Landfill", "PP-05 Single-Use"),
-    broken_glass: RULE("Broken Glass Shards", "Hazardous / Safe Disposal", "GL-Hazardous"),
-    styrofoam: RULE("Styrofoam Container / EPS", "Non-Recyclable / Landfill", "PS-06"),
-    pop_tab: RULE("Aluminum Can Pop Tab", "Dry / Recyclable", "ALU-41"),
+    battery: RULE("Battery", "Hazardous / E-Waste", "#EF4444", true),
+    can: RULE("Can", "Dry / Metal", "#6366F1"),
+    cardboard_bowl: RULE("Cardboard Bowl", "Dry / Paper", PAPER),
+    cardboard_box: RULE("Cardboard Box", "Dry / Paper", PAPER),
+    chemical_plastic_bottle: RULE("Chemical Plastic Bottle", "Hazardous", HAZARD, true),
+    chemical_plastic_gallon: RULE("Chemical Plastic Gallon", "Hazardous", HAZARD, true),
+    chemical_spray_can: RULE("Chemical Spray Can", "Hazardous", HAZARD, true),
+    light_bulb: RULE("Light Bulb", "Hazardous / E-Waste", "#F59E0B", true),
+    paint_bucket: RULE("Paint Bucket", "Hazardous", HAZARD, true),
+    plastic_bag: RULE("Plastic Bag", "Dry / Soft Plastic", RECYCLABLE),
+    plastic_bottle: RULE("Plastic Bottle", "Dry / Recyclable", RECYCLABLE),
+    plastic_bottle_cap: RULE("Plastic Bottle Cap", "Dry / Recyclable", RECYCLABLE),
+    plastic_box: RULE("Plastic Box", "Dry / Recyclable", RECYCLABLE),
+    plastic_cultery: RULE("Plastic Cultery", "General / Non-Recyclable", GENERAL),
+    plastic_cup: RULE("Plastic Cup", "Dry / Recyclable", RECYCLABLE),
+    plastic_cup_lid: RULE("Plastic Cup Lid", "Dry / Recyclable", RECYCLABLE),
+    reuseable_paper: RULE("Reuseable Paper", "Dry / Paper", PAPER),
+    scrap_paper: RULE("Scrap Paper", "Dry / Paper", PAPER),
+    scrap_plastic: RULE("Scrap Plastic", "Dry / Recyclable", RECYCLABLE),
+    snack_bag: RULE("Snack Bag", "General / Landfill", GENERAL),
+    stick: RULE("Stick", "Wet / Organic", "#22C55E"),
+    straw: RULE("Straw", "General / Landfill", GENERAL),
   },
 };
 
@@ -120,5 +141,6 @@ export const MOCK_LEADERBOARD = [
 
 export function mockToken(detection) {
   const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `ECO-${detection.grade}-${rand}`;
+  const code = (detection.rawClass ?? "GEN").toUpperCase().replace(/[^A-Z0-9]+/g, "-");
+  return `ECO-${code}-${rand}`;
 }

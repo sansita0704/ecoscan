@@ -1,4 +1,12 @@
-import { Layers, Loader2, QrCode, ScanLine, Sparkles, Weight } from "lucide-react";
+import {
+  AlertTriangle,
+  Loader2,
+  QrCode,
+  ScanLine,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { getMaterial } from "../../config/wasteTaxonomy";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
@@ -76,15 +84,28 @@ export default function DetectionResultCard({
       <div className="space-y-5 p-5">
         <ConfidenceMeter confidence={detection.confidence} />
 
-        <BinRecommendation category={detection.category} />
+        <BinRecommendation category={detection.bin ?? detection.category} color={detection.color} />
 
         <CompositeNotice detections={detection.detections} />
 
         <div className="grid grid-cols-2 gap-3">
-          <StatTile icon={Weight} label="Est. weight" value={`${detection.weightG} g`} />
-          <StatTile icon={Layers} label="Material grade" value={detection.grade} />
+          <StatTile
+            icon={Trash2}
+            label="Bin"
+            value={detection.bin ?? detection.category}
+            tint={detection.color}
+          />
+          <StatTile
+            icon={detection.isHazardous ? AlertTriangle : ShieldCheck}
+            label="Handling"
+            value={detection.isHazardous ? "Hazardous" : "Standard"}
+            hint={detection.isHazardous ? "Needs a special drop-off" : "Normal household handling"}
+            tint={detection.isHazardous ? "#EF4444" : undefined}
+          />
         </div>
 
+        {/* Only rendered if the rule table supplies a risk reading; the current
+            22-class bin mapping does not, so it stays hidden. */}
         {detection.contamination && <ContaminationMeter {...detection.contamination} />}
 
         {/* key resets checked steps when the detected item changes */}

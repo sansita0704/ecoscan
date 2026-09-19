@@ -70,7 +70,7 @@ export default function WasteGuidePage({ stats }) {
       <Card variant="inset" className="flex items-start gap-3 p-4">
         <Info size={16} className="mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
         <p className="text-xs leading-relaxed text-slate-400">
-          The detection model recognises eleven specific object classes. Material families and bin
+          The detection model recognises twenty-two specific object classes. Material families and bin
           mappings shown here come from the configured disposal rules, not from the model. Items
           outside those classes won't be detected.
         </p>

@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   Brush,
   CheckCircle2,
+  Leaf,
   Loader2,
   MapPin,
   Recycle,
@@ -23,6 +24,7 @@ const ACTION_META = {
   repair: { icon: Wrench, label: "Repair" },
   repurpose: { icon: Sparkles, label: "Repurpose" },
   recycle: { icon: Recycle, label: "Recycle" },
+  compost: { icon: Leaf, label: "Compost" },
   special_disposal: { icon: AlertTriangle, label: "Special disposal" },
   general_disposal: { icon: Trash2, label: "General waste" },
 };

@@ -1,4 +1,4 @@
-import { Flame, Recycle, RotateCcw, ScanLine, Sparkles, Trophy, Weight } from "lucide-react";
+import { AlertTriangle, Flame, Recycle, RotateCcw, ScanLine, Sparkles, Trophy } from "lucide-react";
 import Leaderboard from "../components/leaderboard/Leaderboard";
 import WeeklyActivityChart from "../components/ledger/WeeklyActivityChart";
 import PageHeader from "../components/layout/PageHeader";
@@ -142,16 +142,18 @@ export default function ImpactPage({ stats, onReset, onStartScanning }) {
                   tint="#22C55E"
                 />
                 <StatTile
-                  icon={Weight}
-                  label="Est. mass"
-                  value={stats.grams >= 1000 ? `${(stats.grams / 1000).toFixed(1)} kg` : `${stats.grams} g`}
+                  icon={AlertTriangle}
+                  label="Hazardous"
+                  value={stats.byBin.hazardous}
+                  tint={stats.byBin.hazardous > 0 ? "#EF4444" : undefined}
+                  hint="Kept out of kerbside bins"
                 />
               </div>
             </div>
 
             <p className="mt-4 text-xs leading-relaxed text-slate-500">
-              Points are a scoring rule in this app, not a model output. Mass is estimated from
-              average per-class weights in the disposal rules, not measured.
+              Points and bin routing are scoring rules in this app, not model outputs. The model
+              reports the object class only.
             </p>
           </Card>
 
