@@ -4,11 +4,11 @@
  * `tabs`: [{ id, label, icon?, badge? }]. `badge` renders a small dot, used to
  * flag a tab that has new content while the user is looking at another one.
  */
-export default function TabBar({ tabs, active, onChange, className = "" }) {
+export default function TabBar({ tabs, active, onChange, className = "", ariaLabel = "Result view" }) {
   return (
     <div
       role="tablist"
-      aria-label="Result view"
+      aria-label={ariaLabel}
       className={`flex gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 ${className}`}
     >
       {tabs.map(({ id, label, icon: Icon, badge, disabled }) => {

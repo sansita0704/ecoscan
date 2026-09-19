@@ -25,10 +25,19 @@ export function useMultiDisposalAdvice() {
   // One in-flight AbortController per track, so asking again about the same
   // item cancels its own previous request without touching anyone else's.
   const controllersRef = useRef(new Map());
+  // `trackId` isn't always a clean sortable number (upload-sourced items use
+  // string ids - see hooks/useImageDetection), so "most recently asked about
+  // first" in AdviceList is ordered by this instead of by parsing the id.
+  const seqRef = useRef(0);
 
+  // `trackId` may be a number (live items - see utils/objectTracker) or a
+  // string (upload items - see hooks/useImageDetection). Normalised to a
+  // string for the Map key so it always matches what Object.entries(byTrack)
+  // hands back to callers like AdviceList, regardless of which kind it is.
   const abortOne = useCallback((trackId) => {
-    controllersRef.current.get(trackId)?.abort();
-    controllersRef.current.delete(trackId);
+    const key = String(trackId);
+    controllersRef.current.get(key)?.abort();
+    controllersRef.current.delete(key);
   }, []);
 
   useEffect(
@@ -49,7 +58,8 @@ export function useMultiDisposalAdvice() {
       if (trackId == null || !detection) return;
       abortOne(trackId);
       const controller = new AbortController();
-      controllersRef.current.set(trackId, controller);
+      controllersRef.current.set(String(trackId), controller);
+      const seq = ++seqRef.current;
 
       // Snapshot the subject now: `detection` is a live object that will have
       // moved on (or vanished) by the time the response lands. `detection` and
@@ -63,7 +73,7 @@ export function useMultiDisposalAdvice() {
       };
       setByTrack((prev) => ({
         ...prev,
-        [trackId]: { status: "loading", advice: null, error: null, subject, detection, context },
+        [trackId]: { status: "loading", advice: null, error: null, subject, detection, context, seq },
       }));
 
       try {
@@ -71,16 +81,16 @@ export function useMultiDisposalAdvice() {
         if (controller.signal.aborted) return;
         setByTrack((prev) => ({
           ...prev,
-          [trackId]: { status: "ready", advice, error: null, subject, detection, context },
+          [trackId]: { status: "ready", advice, error: null, subject, detection, context, seq },
         }));
       } catch (error) {
         if (controller.signal.aborted || error.name === "AbortError") return;
         setByTrack((prev) => ({
           ...prev,
-          [trackId]: { status: "error", advice: null, error, subject, detection, context },
+          [trackId]: { status: "error", advice: null, error, subject, detection, context, seq },
         }));
       } finally {
-        if (controllersRef.current.get(trackId) === controller) controllersRef.current.delete(trackId);
+        if (controllersRef.current.get(String(trackId)) === controller) controllersRef.current.delete(String(trackId));
       }
     },
     [abortOne]

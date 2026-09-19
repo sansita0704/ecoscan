@@ -11,7 +11,7 @@ import AdvicePanel from "./AdvicePanel";
  * the camera.
  */
 export default function AdviceList({ byTrack, onRetry, onClear }) {
-  const entries = Object.entries(byTrack).sort((a, b) => Number(b[0]) - Number(a[0]));
+  const entries = Object.entries(byTrack).sort((a, b) => b[1].seq - a[1].seq);
 
   if (!entries.length) {
     return (
@@ -35,8 +35,8 @@ export default function AdviceList({ byTrack, onRetry, onClear }) {
           advice={entry.advice}
           error={entry.error}
           subject={entry.subject}
-          onRetry={() => onRetry(Number(trackId))}
-          onClear={() => onClear(Number(trackId))}
+          onRetry={() => onRetry(trackId)}
+          onClear={() => onClear(trackId)}
           canRequest
         />
       ))}

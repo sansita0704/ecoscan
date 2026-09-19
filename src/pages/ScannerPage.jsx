@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScanLine, Sparkles } from "lucide-react";
+import { AlertTriangle, Camera, ImagePlus, Loader2, PackageSearch, ScanLine, Sparkles } from "lucide-react";
 import AdviceList from "../components/scanner/AdviceList";
+import ImageUploadPanel from "../components/scanner/ImageUploadPanel";
 import LiveStream from "../components/scanner/LiveStream";
 import MobileResultSheet from "../components/scanner/MobileResultSheet";
 import MultiItemPanel from "../components/scanner/MultiItemPanel";
@@ -11,19 +12,65 @@ import { getMaterial } from "../config/wasteTaxonomy";
 import { useDetection } from "../hooks/useDetection";
 import { useDisposalToken } from "../hooks/useDisposalToken";
 import { useGeolocation } from "../hooks/useGeolocation";
+import { useImageDetection } from "../hooks/useImageDetection";
 import { playChime } from "../utils/audio";
 import { grabFrame } from "../utils/frame";
 
+const SOURCE_EMPTY_STATE = {
+  live: (isLive) => ({
+    icon: ScanLine,
+    tone: isLive ? "tech" : "neutral",
+    title: isLive ? "Searching for items" : "Scanner idle",
+    body: isLive
+      ? "Spread items out so each one is visible. Every item the camera confirms gets its own card here."
+      : "Start the camera, then hold items in view. Each one detected gets its own card here.",
+  }),
+  upload: (status, error) => {
+    if (status === "loading") {
+      return { icon: Loader2, tone: "tech", title: "Detecting items…", spin: true, body: "Hang tight while the model looks at your photo." };
+    }
+    if (status === "error") {
+      return {
+        icon: AlertTriangle,
+        tone: "danger",
+        title: "Couldn't process that image",
+        body: error?.message ?? "Try again from the panel on the left.",
+      };
+    }
+    if (status === "ready") {
+      return {
+        icon: PackageSearch,
+        tone: "warn",
+        title: "No items found",
+        body: "Try a closer, better-lit photo, or upload a different image.",
+      };
+    }
+    return {
+      icon: ImagePlus,
+      tone: "neutral",
+      title: "No image yet",
+      body: "Upload a photo on the left to see items listed here.",
+    };
+  },
+};
+
 /**
- * Wires camera -> detection loop -> per-item classification, advice and
- * disposal tokens. Owns the <video> ref so the detection loop and the stream
- * share one element.
+ * Wires camera OR a single uploaded photo -> per-item classification, advice
+ * and disposal tokens. Owns the <video> ref so the live detection loop and
+ * the stream share one element.
  *
- * The right-hand column is tabbed, same shape as the original single-item
- * design: "Detection" lists every item utils/objectTracker has confirmed in
- * the frame (see hooks/useDetection), each as its own compact card; "Advice"
- * is a separate pane holding one answer per item that's been asked about,
- * independent of what the camera is doing right now.
+ * `source` picks which one feeds the shared right-hand column: "live" is the
+ * original continuous camera loop (hooks/useDetection, untouched by this),
+ * "upload" is a single one-shot detection on a picked photo
+ * (hooks/useImageDetection) - useful when a transparent poly bag or a messy
+ * pile doesn't hold still or light well enough for the live loop to read
+ * cleanly. Both sides feed the exact same item cards, advice pane and QR
+ * token flow, so nothing downstream needs to know which source is active.
+ *
+ * The right-hand column is tabbed: "Detection" lists every item found (from
+ * whichever source is active), each as its own compact card; "Advice" is a
+ * separate pane holding one answer per item that's been asked about,
+ * independent of what's currently in view.
  */
 export default function ScannerPage({ camera, muted, onToggleMute, onScan, advice }) {
   const videoRef = useRef(null);
@@ -31,17 +78,29 @@ export default function ScannerPage({ camera, muted, onToggleMute, onScan, advic
   const [lastCapture, setLastCapture] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [tab, setTab] = useState("detection");
+  const [source, setSource] = useState("live");
   // Which item's card asked for the QR token, so that card alone shows the
   // spinner and the modal can be attributed back to it.
   const [tokenItem, setTokenItem] = useState(null);
 
   const { detection, latencyMs, error: detectionError } = useDetection(videoRef, camera.isLive);
+  const upload = useImageDetection();
   const disposal = useDisposalToken();
   const { resolve: resolveLocation } = useGeolocation();
 
-  // `detection.detections` holds every confirmed item, most prominent first
-  // (that same item is also `detection` itself - see hooks/useDetection).
-  const items = detection?.detections ?? [];
+  // Switching to "upload" stops the live camera rather than leaving it
+  // running unseen in the background still hitting the detect endpoint.
+  useEffect(() => {
+    if (source === "upload" && camera.isLive) camera.stop();
+  }, [source, camera.isLive, camera.stop]);
+
+  // `detection.detections` / `upload.detection.detections` hold every
+  // confirmed item, most prominent first (that same item is also the object
+  // itself - see hooks/useDetection and hooks/useImageDetection).
+  const items = source === "live" ? detection?.detections ?? [] : upload.detection?.detections ?? [];
+
+  const emptyState =
+    source === "live" ? SOURCE_EMPTY_STATE.live(camera.isLive) : SOURCE_EMPTY_STATE.upload(upload.status, upload.error);
 
   const canRequestAdvice = useCallback((item) => (item?.confidence ?? 0) >= ADVICE_MIN_CONFIDENCE, []);
   const adviceReason = useCallback(
@@ -78,8 +137,9 @@ export default function ScannerPage({ camera, muted, onToggleMute, onScan, advic
     setTokenItem(null);
   }, [disposal]);
 
-  // Log confirmed detections to the local impact ledger. `onScan` de-duplicates
-  // on the headline item, so one item held in frame counts once.
+  // Log confirmed detections to the local impact ledger. Live only, on
+  // purpose: `onScan` de-duplicates on the headline item, which suits a
+  // continuous stream, not a one-shot upload the user might re-run.
   useEffect(() => {
     onScan(detection);
   }, [detection, onScan]);
@@ -118,10 +178,15 @@ export default function ScannerPage({ camera, muted, onToggleMute, onScan, advic
     { id: "advice", label: "Advice", icon: Sparkles, badge: anyAdviceActive },
   ];
 
+  const sourceTabs = [
+    { id: "live", label: "Live Camera", icon: Camera },
+    { id: "upload", label: "Upload Image", icon: ImagePlus },
+  ];
+
   const detectionView = (
     <MultiItemPanel
       items={items}
-      isLive={camera.isLive}
+      emptyState={emptyState}
       getAdvice={advice.get}
       onRequestAdvice={handleRequestAdvice}
       onViewAdvice={handleViewAdvice}
@@ -145,19 +210,39 @@ export default function ScannerPage({ camera, muted, onToggleMute, onScan, advic
 
   return (
     <>
+      <TabBar
+        tabs={sourceTabs}
+        active={source}
+        onChange={setSource}
+        ariaLabel="Detection source"
+        className="mb-4 max-w-sm"
+      />
+
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-3">
-          <LiveStream
-            videoRef={videoRef}
-            camera={camera}
-            detection={detection}
-            detectionError={detectionError}
-            latencyMs={latencyMs}
-            muted={muted}
-            onToggleMute={onToggleMute}
-            onCapture={handleCapture}
-            lastCapture={lastCapture}
-          />
+          {source === "live" ? (
+            <LiveStream
+              videoRef={videoRef}
+              camera={camera}
+              detection={detection}
+              detectionError={detectionError}
+              latencyMs={latencyMs}
+              muted={muted}
+              onToggleMute={onToggleMute}
+              onCapture={handleCapture}
+              lastCapture={lastCapture}
+            />
+          ) : (
+            <ImageUploadPanel
+              status={upload.status}
+              previewUrl={upload.previewUrl}
+              detection={upload.detection}
+              error={upload.error}
+              onSelectFile={upload.selectFile}
+              onRetry={upload.retry}
+              onClear={upload.clear}
+            />
+          )}
         </div>
 
         {/* Desktop: tabbed panel beside the feed. */}

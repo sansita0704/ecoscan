@@ -9,9 +9,16 @@ import ItemCard from "./ItemCard";
  * a card here just says whether advice has been asked for yet and, if so,
  * links over to it.
  */
+const DEFAULT_EMPTY_STATE = {
+  icon: ScanLine,
+  tone: "neutral",
+  title: "Nothing detected yet",
+  body: "Items detected will each get their own card here.",
+};
+
 export default function MultiItemPanel({
   items,
-  isLive,
+  emptyState = DEFAULT_EMPTY_STATE,
   getAdvice,
   onRequestAdvice,
   onViewAdvice,
@@ -24,14 +31,11 @@ export default function MultiItemPanel({
     return (
       <Card className="flex min-h-[20rem] items-center justify-center">
         <EmptyState
-          icon={ScanLine}
-          tone={isLive ? "tech" : "neutral"}
-          title={isLive ? "Searching for items" : "Scanner idle"}
-          body={
-            isLive
-              ? "Spread items out so each one is visible. Every item the camera confirms gets its own card here."
-              : "Start the camera, then hold items in view. Each one detected gets its own card here."
-          }
+          icon={emptyState.icon}
+          tone={emptyState.tone}
+          title={emptyState.title}
+          body={emptyState.body}
+          className={emptyState.spin ? "[&_svg]:animate-spin" : ""}
         />
       </Card>
     );

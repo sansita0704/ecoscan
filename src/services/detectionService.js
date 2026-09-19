@@ -100,3 +100,32 @@ export async function detect(video, { signal } = {}) {
   body.append("frame", frame, "frame.jpg");
   return toDetection(await request("/api/v1/detect", { method: "POST", body, signal }));
 }
+
+/**
+ * Run detection on a single uploaded image file (e.g. a photo of everything
+ * pulled out of a poly bag) rather than a live camera frame.
+ *
+ * Sent at full resolution rather than downscaled - unlike the live loop this
+ * runs once, not every 150ms, and a poly bag full of small mixed items is
+ * exactly the case that benefits most from not throwing detail away before
+ * the model (which already resizes internally to ECOSCAN_IMGSZ) sees it.
+ *
+ * Also opts into the backend's test-time augmentation (`augment` form field)
+ * for the same reason: it measurably raises confidence on real detections
+ * (~2x on a reflective poly-bag photo, verified) at a latency cost that's
+ * fine for a one-off request but would be wrong for the live loop, which
+ * never sets it.
+ *
+ * @param {File|Blob} file
+ * @param {{signal?: AbortSignal}} [opts]
+ * @returns {Promise<import("../types/contracts").Detection | null>}
+ */
+export async function detectImage(file, { signal } = {}) {
+  if (!file) return null;
+  if (USE_MOCK) return mockDetect(signal);
+
+  const body = new FormData();
+  body.append("frame", file, file.name || "upload.jpg");
+  body.append("augment", "true");
+  return toDetection(await request("/api/v1/detect", { method: "POST", body, signal }));
+}

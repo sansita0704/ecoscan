@@ -15,7 +15,7 @@ function peekFor(items, advice, tab) {
 
   if (tab === "advice" && hasAdvice) {
     // Peek the most recently requested one - it's the top of AdviceList too.
-    const [, latest] = entries.sort((a, b) => Number(b[0]) - Number(a[0]))[0];
+    const [, latest] = entries.sort((a, b) => b[1].seq - a[1].seq)[0];
     const subject = latest.subject?.className;
     return {
       icon: Sparkles,
