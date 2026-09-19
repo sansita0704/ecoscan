@@ -15,6 +15,7 @@ const TONES = {
 
 export default function EmptyState({
   icon: Icon,
+  illustration: Illustration,
   title,
   body,
   tone = "neutral",
@@ -28,6 +29,7 @@ export default function EmptyState({
     <div
       className={`flex flex-col items-center justify-center gap-3 px-6 py-10 text-center ${className}`}
     >
+      {Illustration && <Illustration className="mb-1 h-28 w-40" />}
       {Icon && (
         <div
           className={`flex h-14 w-14 items-center justify-center rounded-2xl border ${TONES[tone]}`}

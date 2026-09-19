@@ -1,14 +1,27 @@
-import { AlertTriangle, Flame, Recycle, RotateCcw, ScanLine, Sparkles, Trophy } from "lucide-react";
+import { 
+  AlertTriangle, 
+  CalendarDays, 
+  CircleCheck, 
+  Flame, 
+  Info, 
+  Recycle, 
+  RotateCcw, 
+  ScanLine, 
+  Sparkles, 
+  Trophy, 
+  Weight 
+} from "lucide-react";
 import Leaderboard from "../components/leaderboard/Leaderboard";
 import WeeklyActivityChart from "../components/ledger/WeeklyActivityChart";
 import PageHeader from "../components/layout/PageHeader";
 import WasteIllustration from "../components/illustrations/WasteIllustration";
+import SortIllustration from "../components/illustrations/SortIllustration";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import EmptyState from "../components/ui/EmptyState";
 import ProgressRing from "../components/ui/ProgressRing";
 import StatTile from "../components/ui/StatTile";
-import { BINS, MATERIAL_LIST } from "../config/wasteTaxonomy";
+import { BINS, getBin, getMaterial, MATERIAL_LIST } from "../config/wasteTaxonomy";
 
 function BinSplit({ byBin, total }) {
   const rows = [BINS.recyclable, BINS.landfill, BINS.hazardous].filter((b) => byBin[b.id] > 0);
@@ -16,8 +29,11 @@ function BinSplit({ byBin, total }) {
 
   return (
     <div>
-      <h3 className="text-label">Where your items went</h3>
-      <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-slate-100">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-label">Where your items went</h3>
+        <span className="text-xs text-slate-400">{total} total</span>
+      </div>
+      <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-slate-100">
         {rows.map((bin) => (
           <div
             key={bin.id}
@@ -27,16 +43,19 @@ function BinSplit({ byBin, total }) {
           />
         ))}
       </div>
-      <ul className="mt-3 space-y-1.5">
+      <ul className="mt-3 grid gap-2 sm:grid-cols-3">
         {rows.map((bin) => {
           const Icon = bin.icon;
+          const count = byBin[bin.id];
           return (
-            <li key={bin.id} className="flex items-center justify-between gap-3 text-sm">
-              <span className="flex items-center gap-2 text-slate-600">
-                <Icon size={14} className={bin.text} aria-hidden="true" />
+            <li key={bin.id} className="rounded-lg border border-slate-200/80 bg-slate-50 px-2.5 py-2">
+              <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                <Icon size={13} className={bin.text} aria-hidden="true" />
                 {bin.label}
               </span>
-              <span className="font-semibold tabular-nums text-slate-800">{byBin[bin.id]}</span>
+              <span className="mt-1 block text-base font-bold tabular-nums text-slate-800">
+                {count} <span className="text-xs font-normal text-slate-400">({Math.round((count / total) * 100)}%)</span>
+              </span>
             </li>
           );
         })}
@@ -50,8 +69,14 @@ function MaterialBreakdown({ byMaterial, total }) {
   if (!rows.length) return null;
 
   return (
-    <Card className="p-5">
-      <h2 className="text-label">Materials sorted</h2>
+    <Card className="h-full p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-label">Materials sorted</h2>
+          <p className="mt-1 text-xs text-slate-400">Your most scanned material families</p>
+        </div>
+        <CircleCheck size={17} className="text-brand-500" aria-hidden="true" />
+      </div>
       <ul className="mt-3 space-y-3">
         {rows.map((m) => {
           const count = byMaterial[m.id];
@@ -78,6 +103,45 @@ function MaterialBreakdown({ byMaterial, total }) {
   );
 }
 
+function RecentScans({ scans }) {
+  return (
+    <Card className="p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-label">Recent scans</h2>
+          <p className="mt-1 text-xs text-slate-400">Your latest confirmed items</p>
+        </div>
+        <CalendarDays size={17} className="text-slate-400" aria-hidden="true" />
+      </div>
+      <ul className="mt-4 divide-y divide-slate-100">
+        {scans.map((scan) => {
+          const material = getMaterial(scan.rawClass);
+          const bin = getBin(scan.category);
+          const MaterialIcon = material ? null : bin.icon;
+          return (
+            <li key={scan.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+              {material ? (
+                <WasteIllustration id={material.id} tint={material.tint} className="h-9 w-9 shrink-0" />
+              ) : (
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${bin.surface} ${bin.text}`}>
+                  <MaterialIcon size={16} aria-hidden="true" />
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-700">{scan.className}</p>
+                <p className="mt-0.5 text-xs text-slate-400">{bin.label}</p>
+              </div>
+              <time className="shrink-0 text-xs tabular-nums text-slate-400">
+                {new Date(scan.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </time>
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
+  );
+}
+
 export default function ImpactPage({ stats, onReset, onStartScanning }) {
   const hasData = stats.total > 0;
 
@@ -90,8 +154,15 @@ export default function ImpactPage({ stats, onReset, onStartScanning }) {
         subtitle="Recorded on this device as you scan. Nothing is uploaded."
         actions={
           hasData && (
-            <Button onClick={onReset} icon={RotateCcw} variant="ghost" size="sm">
-              Reset
+            <Button
+              onClick={() => {
+                if (window.confirm("Clear your scan history? This cannot be undone.")) onReset();
+              }}
+              icon={RotateCcw}
+              variant="secondary"
+              size="sm"
+            >
+              Clear history
             </Button>
           )
         }
@@ -101,6 +172,7 @@ export default function ImpactPage({ stats, onReset, onStartScanning }) {
         <Card>
           <EmptyState
             icon={ScanLine}
+            illustration={SortIllustration}
             tone="brand"
             title="No scans yet"
             body="Your points, streak and material breakdown build up as you scan items."
@@ -111,20 +183,22 @@ export default function ImpactPage({ stats, onReset, onStartScanning }) {
         </Card>
       ) : (
         <>
-          <Card className="p-5">
-            <div className="flex flex-wrap items-center justify-between gap-6">
+          <Card className="overflow-hidden">
+            <div className="flex flex-col gap-6 bg-brand-50/60 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
               <div className="flex items-center gap-5">
                 <ProgressRing
                   value={stats.diverted}
                   max={stats.total}
                   label={`${stats.divertedPct}%`}
-                  caption="diverted"
-                  color="#22C55E"
+                  caption="kept out"
+                  size={118}
+                  stroke={10}
+                  color="#477A5C"
                 />
                 <div>
-                  <p className="text-label">EcoPoints</p>
-                  <p className="mt-1 text-4xl font-extrabold tracking-tight text-slate-800">
-                    {stats.points}
+                  <p className="text-label">Your sorting snapshot</p>
+                  <p className="mt-1 text-2xl font-extrabold tracking-tight text-slate-800 sm:text-3xl">
+                    {stats.diverted} {stats.diverted === 1 ? "item" : "items"} kept out of general waste
                   </p>
                   <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
                     <Flame size={14} className="text-warn-400" aria-hidden="true" />
@@ -133,38 +207,32 @@ export default function ImpactPage({ stats, onReset, onStartScanning }) {
                 </div>
               </div>
 
-              <div className="grid flex-1 grid-cols-2 gap-3 sm:max-w-md sm:grid-cols-3">
-                <StatTile icon={ScanLine} label="Scanned" value={stats.total} />
+              <div className="grid grid-cols-2 gap-3 sm:w-[22rem] sm:grid-cols-2">
+                <StatTile icon={Trophy} label="EcoPoints" value={stats.points} hint="app score" />
+                <StatTile icon={ScanLine} label="Scanned" value={stats.total} hint="all time" />
                 <StatTile
                   icon={Recycle}
-                  label="Diverted"
+                  label="Kept out"
                   value={stats.diverted}
-                  tint="#22C55E"
+                  hint={`${stats.divertedPct}% of total`}
+                  tint="#477A5C"
                 />
                 <StatTile
-                  icon={AlertTriangle}
-                  label="Hazardous"
-                  value={stats.byBin.hazardous}
-                  tint={stats.byBin.hazardous > 0 ? "#EF4444" : undefined}
-                  hint="Kept out of kerbside bins"
+                  icon={Weight}
+                  label="Est. mass"
+                  value={stats.grams >= 1000 ? `${(stats.grams / 1000).toFixed(1)} kg` : `${stats.grams} g`}
                 />
               </div>
             </div>
 
-<<<<<<< HEAD
-            <p className="mt-4 text-xs leading-relaxed text-slate-500">
-              Points and bin routing are scoring rules in this app, not model outputs. The model
-              reports the object class only.
-=======
             <p className="mt-4 text-xs leading-relaxed text-slate-400">
               Points are a scoring rule in this app, not a model output. Mass is estimated from
               average per-class weights in the disposal rules, not measured.
->>>>>>> d599dcb (refactor: update UI styles and colors across components for improved accessibility and consistency)
             </p>
           </Card>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="space-y-5 p-5">
+          <div className="grid gap-4 lg:grid-cols-[1.1fr_.9fr]">
+            <Card className="space-y-6 p-5">
               <WeeklyActivityChart data={stats.weekly} />
               <BinSplit byBin={stats.byBin} total={stats.total} />
             </Card>
@@ -172,31 +240,30 @@ export default function ImpactPage({ stats, onReset, onStartScanning }) {
             <MaterialBreakdown byMaterial={stats.byMaterial} total={stats.total} />
           </div>
 
-          <Card className="p-5">
-            <h2 className="text-label">Recent scans</h2>
-            <ul className="mt-3 divide-y divide-slate-100">
-              {stats.recent.map((s) => (
-                <li key={s.id} className="flex items-center justify-between gap-3 py-2.5">
-                  <span className="min-w-0 truncate text-sm text-slate-700">{s.className}</span>
-                  <span className="shrink-0 text-xs tabular-nums text-slate-400">
-                    {new Date(s.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Card>
+          <div className="grid gap-4 xl:grid-cols-[.9fr_1.1fr]">
+            <RecentScans scans={stats.recent} />
+            <div>
+              <div className="mb-3 flex items-center gap-2">
+                <Info size={14} className="text-slate-400" aria-hidden="true" />
+                <p className="text-xs text-slate-400">
+                  Sample community data — the leaderboard does not reflect real users.
+                </p>
+              </div>
+              <Leaderboard />
+            </div>
+          </div>
         </>
       )}
 
-      <div>
+      {!hasData && <div>
         <div className="mb-3 flex items-center gap-2">
-          <Sparkles size={14} className="text-slate-400" aria-hidden="true" />
+          <Info size={14} className="text-slate-400" aria-hidden="true" />
           <p className="text-xs text-slate-400">
-            Community leaderboard is sample data from the backend — it doesn't reflect real users.
+            Sample community data — the leaderboard does not reflect real users.
           </p>
         </div>
         <Leaderboard />
-      </div>
+      </div>}
     </div>
   );
 }

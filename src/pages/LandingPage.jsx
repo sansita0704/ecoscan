@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Cpu, Recycle, ScanLine, ScrollText } from "lucide-react";
+import { BarChart3, BookOpen, Cpu, ListChecks, MapPin, Recycle, ScanLine, ScrollText } from "lucide-react";
 import HeroScanVisual from "../components/landing/HeroScanVisual";
 import WasteIllustration from "../components/illustrations/WasteIllustration";
 import Button from "../components/ui/Button";
@@ -7,7 +7,7 @@ import { MATERIAL_LIST } from "../config/wasteTaxonomy";
 
 const FLOW = [
   { icon: ScanLine, title: "Scan", body: "Hold an item to the camera. Detection runs continuously." },
-  { icon: Cpu, title: "Identify", body: "The model returns the object class and its confidence." },
+  { icon: Cpu, title: "Identify", body: "Get a clear read on the item and how certain it is." },
   { icon: ScrollText, title: "Understand", body: "Disposal rules turn that class into real guidance." },
   { icon: Recycle, title: "Act", body: "A colour-coded bin and the steps to prepare the item." },
 ];
@@ -44,6 +44,22 @@ export default function LandingPage({ onStart, onExplore, stats }) {
               Explore impact
             </Button>
           </div>
+
+          <ul className="mt-8 grid max-w-lg grid-cols-3 divide-x divide-slate-200 border-y border-slate-200 py-4">
+            {[
+              { icon: ListChecks, value: "11", label: "item types" },
+              { icon: Recycle, value: "4", label: "material groups" },
+              { icon: MapPin, value: "Local", label: "scan history" },
+            ].map(({ icon: Icon, value, label }) => (
+              <li key={label} className="flex items-center gap-2 px-3 first:pl-0 last:pr-0 sm:gap-2.5">
+                <Icon size={15} className="shrink-0 text-brand-600" aria-hidden="true" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-slate-800">{value}</span>
+                  <span className="block truncate text-[0.6875rem] text-slate-500">{label}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
 
           {stats.total > 0 && (
             <p className="mt-5 text-sm text-slate-500">
