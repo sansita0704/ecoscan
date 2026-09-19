@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ScanLine, Sparkles } from "lucide-react";
+import AdviceList from "../components/scanner/AdviceList";
 import LiveStream from "../components/scanner/LiveStream";
 import MobileResultSheet from "../components/scanner/MobileResultSheet";
 import MultiItemPanel from "../components/scanner/MultiItemPanel";
 import TokenModal from "../components/scanner/TokenModal";
+import TabBar from "../components/ui/TabBar";
 import { ADVICE_MIN_CONFIDENCE } from "../config/constants";
 import { getMaterial } from "../config/wasteTaxonomy";
 import { useDetection } from "../hooks/useDetection";
@@ -16,17 +19,18 @@ import { grabFrame } from "../utils/frame";
  * disposal tokens. Owns the <video> ref so the detection loop and the stream
  * share one element.
  *
- * The right-hand column lists every item utils/objectTracker has confirmed in
- * the frame (see hooks/useDetection), each as its own pane via ItemCard -
- * pull several things out of one bag and each gets its own card and can be
- * asked about independently, rather than the panel only ever describing one
- * "winning" item.
+ * The right-hand column is tabbed, same shape as the original single-item
+ * design: "Detection" lists every item utils/objectTracker has confirmed in
+ * the frame (see hooks/useDetection), each as its own compact card; "Advice"
+ * is a separate pane holding one answer per item that's been asked about,
+ * independent of what the camera is doing right now.
  */
 export default function ScannerPage({ camera, muted, onToggleMute, onScan, advice }) {
   const videoRef = useRef(null);
   const captureUrlRef = useRef(null);
   const [lastCapture, setLastCapture] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [tab, setTab] = useState("detection");
   // Which item's card asked for the QR token, so that card alone shows the
   // spinner and the modal can be attributed back to it.
   const [tokenItem, setTokenItem] = useState(null);
@@ -51,12 +55,15 @@ export default function ScannerPage({ camera, muted, onToggleMute, onScan, advic
   // the same turn would still hold the previous render's fallback coordinates.
   const handleRequestAdvice = useCallback(
     async (item) => {
+      setTab("advice");
       const material = getMaterial(item.rawClass)?.id ?? null;
       const location = await resolveLocation();
       advice.request(item.trackId, item, { material, location });
     },
     [advice, resolveLocation]
   );
+
+  const handleViewAdvice = useCallback(() => setTab("advice"), []);
 
   const handleGenerateToken = useCallback(
     (item) => {
@@ -77,10 +84,11 @@ export default function ScannerPage({ camera, muted, onToggleMute, onScan, advic
     onScan(detection);
   }, [detection, onScan]);
 
-  // Collapse the mobile sheet once every item has left the frame.
+  // Collapse the mobile sheet once there's nothing to show on either tab.
+  const hasAdvice = Object.keys(advice.byTrack).length > 0;
   useEffect(() => {
-    if (!items.length) setSheetOpen(false);
-  }, [items.length]);
+    if (!items.length && !hasAdvice) setSheetOpen(false);
+  }, [items.length, hasAdvice]);
 
   const handleCapture = useCallback(
     async (mirrored) => {
@@ -101,18 +109,38 @@ export default function ScannerPage({ camera, muted, onToggleMute, onScan, advic
     []
   );
 
-  const panel = (
+  const anyAdviceActive = Object.values(advice.byTrack).some(
+    (a) => a.status === "loading" || a.status === "ready"
+  );
+
+  const tabs = [
+    { id: "detection", label: "Detection", icon: ScanLine },
+    { id: "advice", label: "Advice", icon: Sparkles, badge: anyAdviceActive },
+  ];
+
+  const detectionView = (
     <MultiItemPanel
       items={items}
       isLive={camera.isLive}
       getAdvice={advice.get}
       onRequestAdvice={handleRequestAdvice}
-      onClearAdvice={advice.clear}
+      onViewAdvice={handleViewAdvice}
       onGenerateToken={handleGenerateToken}
       tokenBusyTrackId={disposal.status === "loading" ? tokenItem?.trackId : null}
       canRequestAdvice={canRequestAdvice}
       adviceReason={adviceReason}
     />
+  );
+
+  const adviceView = <AdviceList byTrack={advice.byTrack} onRetry={advice.retry} onClear={advice.clear} />;
+
+  const panel = (
+    <>
+      <TabBar tabs={tabs} active={tab} onChange={setTab} />
+      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="mt-3">
+        {tab === "detection" ? detectionView : adviceView}
+      </div>
+    </>
   );
 
   return (
@@ -132,18 +160,24 @@ export default function ScannerPage({ camera, muted, onToggleMute, onScan, advic
           />
         </div>
 
-        {/* Desktop: item list beside the feed. */}
+        {/* Desktop: tabbed panel beside the feed. */}
         <div className="hidden lg:col-span-2 lg:block">{panel}</div>
 
         {/* Mobile: shown inline until there's something to put in the sheet. */}
-        {!items.length && <div className="lg:hidden">{panel}</div>}
+        {!items.length && !hasAdvice && <div className="lg:hidden">{panel}</div>}
 
         {/* Mobile: clearance so the collapsed sheet never covers page content. */}
-        {items.length > 0 && <div aria-hidden="true" className="h-16 lg:hidden" />}
+        {(items.length > 0 || hasAdvice) && <div aria-hidden="true" className="h-16 lg:hidden" />}
       </div>
 
       {/* Mobile: results become a bottom sheet over the camera. */}
-      <MobileResultSheet open={sheetOpen} onToggle={() => setSheetOpen((o) => !o)} items={items}>
+      <MobileResultSheet
+        open={sheetOpen}
+        onToggle={() => setSheetOpen((o) => !o)}
+        items={items}
+        advice={advice}
+        tab={tab}
+      >
         {panel}
       </MobileResultSheet>
 

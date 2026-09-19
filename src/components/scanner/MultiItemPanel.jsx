@@ -4,19 +4,17 @@ import EmptyState from "../ui/EmptyState";
 import ItemCard from "./ItemCard";
 
 /**
- * Every confirmed item in the frame, each as its own pane with its own advice.
- *
- * This is what makes emptying a poly bag of mixed items in front of the
- * camera useful: instead of one headline detection, every item the tracker
- * has confirmed (see utils/objectTracker) gets listed and can be asked about
- * independently.
+ * The Detection pane: every confirmed item in the frame, each as its own
+ * compact card. Advice lives in the separate Advice pane (see AdviceList) -
+ * a card here just says whether advice has been asked for yet and, if so,
+ * links over to it.
  */
 export default function MultiItemPanel({
   items,
   isLive,
   getAdvice,
   onRequestAdvice,
-  onClearAdvice,
+  onViewAdvice,
   onGenerateToken,
   tokenBusyTrackId,
   canRequestAdvice,
@@ -53,8 +51,7 @@ export default function MultiItemPanel({
           primary={i === 0}
           advice={getAdvice(item.trackId)}
           onRequestAdvice={() => onRequestAdvice(item)}
-          onRetryAdvice={() => onRequestAdvice(item)}
-          onClearAdvice={() => onClearAdvice(item.trackId)}
+          onViewAdvice={onViewAdvice}
           onGenerateToken={() => onGenerateToken(item)}
           tokenBusy={tokenBusyTrackId === item.trackId}
           canRequestAdvice={canRequestAdvice(item)}

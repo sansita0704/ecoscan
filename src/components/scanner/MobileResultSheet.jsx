@@ -1,31 +1,59 @@
-import { ChevronUp, X } from "lucide-react";
+import { ChevronUp, Sparkles, X } from "lucide-react";
 import { getBin } from "../../config/wasteTaxonomy";
 
 /**
- * What the collapsed peek should say: the most prominent item, and how many
- * others are alongside it.
+ * What the collapsed peek should say.
+ *
+ * Advice outlives the items that produced it (see hooks/useMultiDisposalAdvice),
+ * so once the user has asked about something the sheet stays reachable even
+ * after every item leaves the frame - otherwise the result they're reading
+ * would slide away mid-sentence.
  */
-function peekFor(items) {
-  if (!items.length) return null;
-  const [primary, ...rest] = items;
-  const bin = getBin(primary.bin ?? primary.category);
-  return {
-    icon: bin.icon,
-    hex: primary.color || bin.hex,
-    title: primary.className,
-    subtitle: rest.length ? `${bin.label} · +${rest.length} more item${rest.length === 1 ? "" : "s"}` : bin.label,
-  };
+function peekFor(items, advice, tab) {
+  const entries = Object.entries(advice.byTrack);
+  const hasAdvice = entries.length > 0;
+
+  if (tab === "advice" && hasAdvice) {
+    // Peek the most recently requested one - it's the top of AdviceList too.
+    const [, latest] = entries.sort((a, b) => Number(b[0]) - Number(a[0]))[0];
+    const subject = latest.subject?.className;
+    return {
+      icon: Sparkles,
+      hex: "#8B5CF6",
+      title: subject ? `Advice · ${subject}` : "Disposal advice",
+      subtitle:
+        latest.status === "loading"
+          ? "Working out your options…"
+          : latest.status === "error"
+            ? "Couldn't get advice"
+            : "Tap to read",
+    };
+  }
+  if (items.length) {
+    const [primary, ...rest] = items;
+    const bin = getBin(primary.bin ?? primary.category);
+    return {
+      icon: bin.icon,
+      hex: primary.color || bin.hex,
+      title: primary.className,
+      subtitle: rest.length ? `${bin.label} · +${rest.length} more item${rest.length === 1 ? "" : "s"}` : bin.label,
+    };
+  }
+  if (hasAdvice) {
+    return { icon: Sparkles, hex: "#8B5CF6", title: "Disposal advice", subtitle: "Tap to read" };
+  }
+  return null;
 }
 
 /**
  * Mobile-only bottom sheet for the detection results.
  *
- * Collapsed it peeks above the tab bar with just the headline item and how
- * many others are with it, so the camera keeps the screen. Expanded it covers
- * the tab bar and scrolls the full list of item panes.
+ * Collapsed it peeks above the tab bar with just the headline card for
+ * whichever tab is active. Expanded it covers the tab bar and scrolls the
+ * full tabbed panel (Detection list / Advice list).
  */
-export default function MobileResultSheet({ open, onToggle, items, children }) {
-  const peek = peekFor(items);
+export default function MobileResultSheet({ open, onToggle, items, advice, tab, children }) {
+  const peek = peekFor(items, advice, tab);
   if (!peek) return null;
   const PeekIcon = peek.icon;
 

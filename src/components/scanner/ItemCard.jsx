@@ -1,28 +1,34 @@
-import { AlertTriangle, QrCode } from "lucide-react";
+import { AlertTriangle, ArrowRight, Loader2, QrCode, Sparkles } from "lucide-react";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
-import AdvicePanel from "./AdvicePanel";
 import BinRecommendation from "./BinRecommendation";
 
+const ADVICE_BUTTON = {
+  loading: { label: "Getting advice…", icon: Loader2, spin: true },
+  ready: { label: "View advice", icon: ArrowRight, spin: false },
+  error: { label: "Advice failed — view", icon: ArrowRight, spin: false },
+};
+
 /**
- * One detected product, as its own self-contained pane: identity, bin, prep
- * tip, and an inline "Get advice" that expands to that item's own advice -
- * independent of every other item's card.
+ * One detected product, as its own self-contained detection pane: identity,
+ * bin, prep tip, a QR token button, and a jump into the (separate) Advice
+ * pane. Advice itself is never rendered in here - see AdviceList - so this
+ * stays compact even with several items on screen at once.
  */
 export default function ItemCard({
   item,
   primary,
   advice,
   onRequestAdvice,
-  onRetryAdvice,
-  onClearAdvice,
+  onViewAdvice,
   onGenerateToken,
   tokenBusy,
   canRequestAdvice,
   adviceReason,
 }) {
   const pct = Math.round((item.confidence ?? 0) * 100);
+  const adviceButton = ADVICE_BUTTON[advice.status];
 
   return (
     <Card
@@ -77,17 +83,33 @@ export default function ItemCard({
           </Button>
         </div>
 
-        <AdvicePanel
-          status={advice.status}
-          advice={advice.advice}
-          error={advice.error}
-          subject={advice.subject}
-          onRequest={onRequestAdvice}
-          onRetry={onRetryAdvice}
-          onClear={onClearAdvice}
-          canRequest={canRequestAdvice}
-          reason={adviceReason}
-        />
+        {adviceButton ? (
+          <Button
+            onClick={onViewAdvice}
+            icon={adviceButton.spin ? undefined : adviceButton.icon}
+            variant="secondary"
+            size="sm"
+            className="w-full"
+          >
+            {adviceButton.spin && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
+            {adviceButton.label}
+          </Button>
+        ) : (
+          <>
+            <Button
+              onClick={onRequestAdvice}
+              disabled={!canRequestAdvice}
+              icon={Sparkles}
+              size="sm"
+              className="w-full"
+            >
+              Get advice for this item
+            </Button>
+            {!canRequestAdvice && (
+              <p className="text-center text-xs leading-relaxed text-slate-400">{adviceReason}</p>
+            )}
+          </>
+        )}
       </div>
     </Card>
   );
