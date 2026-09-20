@@ -123,13 +123,6 @@ export const MOCK_WASTE_RULES = {
   },
 };
 
-export const MOCK_HUB = {
-  name: "GreenLoop Recycling Hub",
-  distanceKm: 0.8,
-  hours: "Open until 8:00 PM",
-  lat: 26.9124,
-  lng: 75.7873,
-};
 
 export const MOCK_LEADERBOARD = [
   { id: "1", name: "Aarav M.", points: 1280, streakDays: 21 },

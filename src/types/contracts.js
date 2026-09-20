@@ -45,7 +45,15 @@
 /**
  * @typedef {Object} DropoffFacility
  * @property {string} id
- * @property {string} name
+ * @property {string} name         an OSM `name` tag if one exists, else a generic
+ *                                  description synthesized from its category
+ * @property {boolean} named       true only for the former - lets the UI say
+ *                                  outright whether this is a real place name
+ *                                  or just what kind of site it is
+ * @property {string|null} locality  for an unnamed site, the neighbourhood/road
+ *                                  actually at its coordinates (reverse geocoded,
+ *                                  not from the site's own tags) - null if that
+ *                                  lookup wasn't run or found nothing
  * @property {string} kind
  * @property {number} distanceKm
  * @property {number} lat
@@ -59,6 +67,27 @@
  */
 
 /**
+ * A waste collection requested from the user's own address. Recorded and
+ * tracked by the backend; there is no courier dispatch behind it.
+ *
+ * @typedef {Object} Pickup
+ * @property {string} id                 e.g. "PU-1A2B3C4D"
+ * @property {"scheduled"|"cancelled"} status
+ * @property {string} createdAt          ISO 8601
+ * @property {string|null} cancelledAt   ISO 8601, set once cancelled
+ * @property {string} name
+ * @property {string} phone
+ * @property {string} address
+ * @property {string} preferredDate      yyyy-mm-dd
+ * @property {string} timeWindow         e.g. "09:00 - 12:00"
+ * @property {string[]} wasteTypes       material families being collected
+ * @property {string|null} notes
+ * @property {number|null} lat           only when the user shared location
+ * @property {number|null} lon
+ * @property {string|null} facilityName  where it's headed, when chosen
+ */
+
+/**
  * @typedef {Object} LedgerSummary
  * @property {number} points
  * @property {number} streakDays
@@ -68,14 +97,6 @@
  * @property {{day: string, items: number}[]} weekly   last 7 days, oldest first
  */
 
-/**
- * @typedef {Object} DropoffHub
- * @property {string} name
- * @property {number} distanceKm
- * @property {string} hours
- * @property {number} lat
- * @property {number} lng
- */
 
 /**
  * @typedef {Object} LeaderboardEntry

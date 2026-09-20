@@ -1,4 +1,5 @@
 import io
+import json
 import logging
 import math
 import os
@@ -6,6 +7,7 @@ import re
 import threading
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -725,16 +727,114 @@ async def create_disposal_token(req: DisposalTokenRequest):
     return {"token": f"ECO-{code}-{rand_code}"}
 
 
-@app.get("/api/v1/hubs/nearest")
-async def get_nearest_hub():
-    """Return nearest drop-off hub."""
-    return {
-        "name": "GreenLoop Recycling Hub",
-        "distance_km": 0.8,
-        "hours": "Open until 8:00 PM",
-        "lat": 26.9124,
-        "lng": 75.7873,
+# =========================================================================
+# Waste pickup scheduling
+#
+# A collection request the user raises from the Facilities page when going to
+# a drop-off point themselves isn't practical. Stored as JSON on disk rather
+# than in memory so a scheduled pickup survives a backend restart - it is a
+# commitment the user made, not a cache.
+#
+# NOTE: this records and tracks the request. It does NOT dispatch to a real
+# courier or waste-collection service - there's no such integration in this
+# project - and the UI says so rather than implying a van is on its way.
+# =========================================================================
+
+PICKUPS_PATH = Path(os.getenv("ECOSCAN_PICKUPS_PATH", str(BASE_DIR / "data" / "pickups.json")))
+_PICKUPS_LOCK = threading.Lock()
+
+
+def _load_pickups() -> List[Dict[str, Any]]:
+    try:
+        with open(PICKUPS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except FileNotFoundError:
+        return []
+    except (ValueError, json.JSONDecodeError):
+        logger.exception("pickups.json is unreadable; starting from an empty list")
+        return []
+
+
+def _save_pickups(pickups: List[Dict[str, Any]]) -> None:
+    PICKUPS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    # Write via a temp file so an interrupted write can't truncate the store.
+    tmp = PICKUPS_PATH.with_suffix(".json.tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(pickups, f, indent=2)
+    tmp.replace(PICKUPS_PATH)
+
+
+class PickupRequest(BaseModel):
+    name: str
+    phone: str
+    address: str
+    preferred_date: str
+    time_window: str
+    waste_types: List[str] = []
+    notes: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    # Where the collected waste is headed, when the user picked a facility
+    # from the nearby list rather than leaving it to the operator.
+    facility_name: Optional[str] = None
+
+
+@app.get("/api/v1/pickups")
+async def list_pickups():
+    """Every pickup this install has scheduled, newest first."""
+    with _PICKUPS_LOCK:
+        pickups = _load_pickups()
+    return {"pickups": sorted(pickups, key=lambda p: p.get("created_at", ""), reverse=True)}
+
+
+@app.post("/api/v1/pickups", status_code=201)
+async def create_pickup(req: PickupRequest):
+    """Schedule a waste collection from the user's address."""
+    required = {"name": req.name, "phone": req.phone, "address": req.address,
+                "preferred_date": req.preferred_date, "time_window": req.time_window}
+    missing = [field for field, value in required.items() if not str(value or "").strip()]
+    if missing:
+        raise HTTPException(status_code=422, detail=f"Missing required field(s): {', '.join(missing)}")
+
+    pickup = {
+        "id": f"PU-{uuid.uuid4().hex[:8].upper()}",
+        "status": "scheduled",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "name": req.name.strip(),
+        "phone": req.phone.strip(),
+        "address": req.address.strip(),
+        "preferred_date": req.preferred_date,
+        "time_window": req.time_window,
+        "waste_types": [w for w in req.waste_types if str(w).strip()],
+        "notes": (req.notes or "").strip() or None,
+        "lat": req.lat,
+        "lon": req.lon,
+        "facility_name": req.facility_name,
     }
+
+    with _PICKUPS_LOCK:
+        pickups = _load_pickups()
+        pickups.append(pickup)
+        _save_pickups(pickups)
+
+    logger.info("Pickup %s scheduled for %s (%s)", pickup["id"], pickup["preferred_date"], pickup["time_window"])
+    return pickup
+
+
+@app.post("/api/v1/pickups/{pickup_id}/cancel")
+async def cancel_pickup(pickup_id: str):
+    """Cancel a scheduled pickup. Kept in the list as cancelled, not deleted,
+    so the user can still see it happened."""
+    with _PICKUPS_LOCK:
+        pickups = _load_pickups()
+        target = next((p for p in pickups if p.get("id") == pickup_id), None)
+        if target is None:
+            raise HTTPException(status_code=404, detail=f"No pickup with id {pickup_id}")
+        target["status"] = "cancelled"
+        target["cancelled_at"] = datetime.now(timezone.utc).isoformat()
+        _save_pickups(pickups)
+    return target
 
 
 @app.get("/api/v1/ledger/summary")

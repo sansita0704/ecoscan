@@ -13,11 +13,15 @@ const ENDPOINTS = [
   "https://overpass.kumi.systems/api/interpreter",
 ];
 
-// Two attempts at most. The first is small enough that a dense city can't push
-// the nearest sites past the element cap; the second is as far as anyone would
-// reasonably travel to drop something off. Overpass is a shared free service,
-// so keeping the request count low matters as much as the result.
-const RADII_M = [5000, 25000];
+// Three attempts at most, widening every time the last one came back empty.
+// The first is small enough that a dense city can't push the nearest sites
+// past the element cap; the second is as far as anyone would reasonably
+// travel to drop something off. Real-world tagging density for waste sites
+// on OpenStreetMap varies a lot by region - well below either of those in
+// some areas - so a third, wider pass is what stands between "genuinely
+// nothing tagged nearby" and "we didn't look far enough before giving up".
+// Only spent when the closer, cheaper radii truly found nothing.
+const RADII_M = [5000, 25000, 60000];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -183,22 +187,133 @@ function addressFrom(tags) {
   return parts.length ? parts.join(", ") : null;
 }
 
+// --- Locating an unnamed site by what's actually near it --------------------
+//
+// Most informal waste points on OSM carry a category tag (`amenity=
+// waste_disposal`) and nothing else - no name, no address tags at all. That's
+// not missing data this code can fill in from what the node itself says; it
+// genuinely isn't there. But the COORDINATES are real, and reverse geocoding
+// them (Nominatim, same free OSM-backed service the location search uses)
+// asks a different question than the node's own tags can answer: "what road/
+// neighbourhood is actually at this point?" - computed from OSM's street and
+// boundary data, not invented. That's a locality, not a proper name for the
+// site, and the UI says so rather than dressing it up as one.
+
+const REVERSE_ENDPOINT = "https://nominatim.openstreetmap.org/reverse";
+// Localities don't move; cache far longer than the facility search itself.
+const REVERSE_CACHE_TTL_MS = Number(process.env.NOMINATIM_CACHE_TTL_MS ?? 24 * 60 * 60 * 1000);
+const REVERSE_CACHE_MAX = 500;
+const reverseCache = new Map();
+// Nominatim's usage policy caps this service at ~1 request/second; lookups
+// for one search are run through this so they queue rather than burst.
+let reverseQueue = Promise.resolve();
+
+function reverseCacheKey(lat, lon) {
+  // ~100m precision - plenty for "which neighbourhood/road", and it means
+  // two nearby unnamed sites share one lookup instead of paying for both.
+  return `${lat.toFixed(3)},${lon.toFixed(3)}`;
+}
+
+/** @returns {Promise<string|null>} a short locality description, or null if none was found/reachable. */
+function localityNear(lat, lon, signal) {
+  const key = reverseCacheKey(lat, lon);
+  const cached = reverseCache.get(key);
+  if (cached && Date.now() < cached.expires) return Promise.resolve(cached.value);
+
+  const run = async () => {
+    const url = new URL(REVERSE_ENDPOINT);
+    url.searchParams.set("lat", String(lat));
+    url.searchParams.set("lon", String(lon));
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("zoom", "16"); // road/neighbourhood level - not house-number precision, which is irrelevant here
+    url.searchParams.set("addressdetails", "1");
+
+    let value = null;
+    try {
+      const timeout = AbortSignal.timeout(5000);
+      const composite = signal ? AbortSignal.any([signal, timeout]) : timeout;
+      const res = await fetch(url, {
+        headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+        signal: composite,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const a = data.address ?? {};
+        // Road first, not suburb: points a couple of streets apart routinely
+        // share a suburb (that's what makes it a suburb, not a street), so
+        // leading with it was giving several genuinely different sites the
+        // exact same label. The road differs street to street; pairing it
+        // with the broader area when there is one gives both the specific
+        // detail and the context, e.g. "Kartavya Path, Raisina Hill" rather
+        // than either alone.
+        const specific = a.road || a.neighbourhood || a.quarter || null;
+        const broader = a.suburb || a.village || a.town || null;
+        const parts = [specific, broader !== specific ? broader : null].filter(Boolean);
+        value = parts.length ? parts.join(", ") : a.city || null;
+      }
+    } catch {
+      // Left as null - the caller falls back to the bare category description.
+    }
+
+    if (reverseCache.size >= REVERSE_CACHE_MAX) reverseCache.delete(reverseCache.keys().next().value);
+    reverseCache.set(key, { value, expires: Date.now() + REVERSE_CACHE_TTL_MS });
+    // Nominatim asks for ~1 req/sec; hold the queue open a beat after every
+    // real request (cache hits above never reach here, so they don't wait).
+    await sleep(1100);
+    return value;
+  };
+
+  const result = reverseQueue.then(run, run);
+  reverseQueue = result.catch(() => {});
+  return result;
+}
+
+// Bounds the worst case added latency (~1/sec each) rather than reverse
+// geocoding every unnamed result in a sparse area one at a time.
+const MAX_LOCALITY_LOOKUPS = 6;
+
+/** Fills in `locality` for unnamed rows, best-effort, in place. */
+async function enrichUnnamed(rows, signal) {
+  const targets = rows.filter((r) => !r.named).slice(0, MAX_LOCALITY_LOOKUPS);
+  await Promise.all(
+    targets.map(async (row) => {
+      row.locality = await localityNear(row.lat, row.lon, signal);
+    })
+  );
+}
+
 /**
  * @param {{lat:number, lon:number}} origin
- * @param {{material?: string, hazardous?: boolean, limit?: number, signal?: AbortSignal}} opts
+ * @param {{material?: string, hazardous?: boolean, limit?: number, signal?: AbortSignal, budgetMs?: number}} opts
+ *   `budgetMs` overrides the default whole-lookup ceiling (OVERPASS_BUDGET_MS).
+ *   The disposal-advice flow keeps the tight default - it's one step inside a
+ *   larger request the user is already waiting on. A dedicated "browse
+ *   facilities" action has no such competing wait, and the third, widest
+ *   radius (see RADII_M) needs the extra room to actually get used rather
+ *   than being cut off by a budget sized for two attempts.
  */
-export async function findFacilities(origin, { material, hazardous = false, limit = 5, signal } = {}) {
+export async function findFacilities(
+  origin,
+  { material, hazardous = false, limit = 5, signal, budgetMs = TOTAL_BUDGET_MS } = {}
+) {
   const key = cacheKey(origin, material, hazardous);
   const cached = cacheGet(key);
   if (cached) return { ...cached, cached: true };
 
   const wanted = MATERIAL_TAGS[material] ?? [];
-  const deadline = Date.now() + TOTAL_BUDGET_MS;
+  const deadline = Date.now() + budgetMs;
   // "We looked and found nothing" and "we couldn't look" are different answers,
   // and the UI says different things about them. A wider search timing out must
   // not erase the fact that a narrower one completed.
   let searched = false;
   let lastRadius = null;
+  // A handful of real options beats stopping the instant the smallest radius
+  // finds even one. Widen until there are at least this many (or we run out
+  // of radii/budget) - but never lose a smaller radius's real result to a
+  // wider one that times out: that's what this holds onto in the meantime.
+  const MIN_RESULTS = Math.min(limit, 4);
+  let bestRows = null;
+  let bestRadius = null;
 
   for (const radius of RADII_M) {
     if (Date.now() > deadline) break;
@@ -227,7 +342,12 @@ export async function findFacilities(origin, { material, hazardous = false, limi
 
       const accepts = acceptedMaterials(tags);
       const isCentre = tags.recycling_type === "centre" || tags.amenity !== "recycling";
-      const matches = wanted.some((w) => accepts.includes(w));
+      // No material was asked about (a plain "what's nearby" browse, not
+      // advice for a specific scanned item) -> every site is a match; there
+      // is nothing to mismatch against. Without this, a facility that lists
+      // its accepted materials was being excluded for not accepting an empty
+      // wanted-list, while only vague, untagged sites survived.
+      const matches = wanted.length === 0 || wanted.some((w) => accepts.includes(w));
 
       // A site that lists materials but not this one is the wrong destination.
       if (!hazardous && accepts.length > 0 && !matches) continue;
@@ -248,6 +368,10 @@ export async function findFacilities(origin, { material, hazardous = false, limi
         phone: tags.phone ?? tags["contact:phone"] ?? null,
         operator: tags.operator ?? null,
         accepts,
+        // Filled in for unnamed rows just before the response goes out - see
+        // enrichUnnamed. Present on every row (rather than left undefined)
+        // so the shape is the same regardless of whether a lookup ran.
+        locality: null,
         // Ranking only: an exact material match and a named site are more useful.
         rank: (matches ? 0 : 1) + (named ? 0 : 0.5),
         source: "OpenStreetMap",
@@ -256,15 +380,33 @@ export async function findFacilities(origin, { material, hazardous = false, limi
     }
 
     if (rows.length) {
-      rows.sort((a, b) => a.rank - b.rank || a.distanceKm - b.distanceKm);
-      const result = {
-        facilities: rows.slice(0, limit).map(({ rank, named, ...f }) => f),
-        source: "OpenStreetMap",
-        searchRadiusKm: radius / 1000,
-      };
-      cacheSet(key, result);
-      return result;
+      bestRows = rows;
+      bestRadius = radius;
+      // Enough to show, or nowhere wider left to try - stop here rather
+      // than spending another request on a free shared service for
+      // results the user won't see past the ones already found.
+      if (rows.length >= MIN_RESULTS || radius === RADII_M.at(-1)) break;
     }
+  }
+
+  if (bestRows) {
+    bestRows.sort((a, b) => a.rank - b.rank || a.distanceKm - b.distanceKm);
+    const shown = bestRows.slice(0, limit);
+    // Best-effort, sequential (Nominatim's rate limit), capped at
+    // MAX_LOCALITY_LOOKUPS - a slow/failed lookup leaves that row's
+    // `locality` at null rather than failing the whole search.
+    await enrichUnnamed(shown, signal);
+    const result = {
+      // `named` rides along now (rank stays internal): the UI needs to tell
+      // "OpenStreetMap, Central Recycling Co-op" apart from "OpenStreetMap,
+      // Recycling point" - a real name a mapper gave it, versus this code's
+      // own fallback description synthesized from the category tag alone.
+      facilities: shown.map(({ rank, ...f }) => f),
+      source: "OpenStreetMap",
+      searchRadiusKm: bestRadius / 1000,
+    };
+    cacheSet(key, result);
+    return result;
   }
 
   const empty = {

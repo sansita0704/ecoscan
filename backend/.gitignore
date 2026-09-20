@@ -16,5 +16,9 @@ runs/
 * (1).pt
 *.pt.zip
 
+# Locally scheduled pickups - user data written at runtime, not source
+data/pickups.json
+data/pickups.json.tmp
+
 # macOS
 .DS_Store

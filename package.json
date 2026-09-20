@@ -4,7 +4,7 @@
   "version": "2.4.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "cross-env NODE_OPTIONS=\"--use-system-ca --dns-result-order=ipv4first\" vite",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -19,6 +19,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
+    "cross-env": "^10.1.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
     "vite": "^5.3.1"

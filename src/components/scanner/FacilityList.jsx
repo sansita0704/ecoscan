@@ -1,4 +1,4 @@
-import { Clock, ExternalLink, MapPin, Navigation, Phone } from "lucide-react";
+import { Clock, ExternalLink, MapPin, Navigation, Phone, Tag } from "lucide-react";
 
 /**
  * Real drop-off locations from OpenStreetMap.
@@ -36,11 +36,35 @@ export default function FacilityList({ facilities, source, note, radiusKm }) {
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-800">{f.name}</p>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  {f.kind}
-                  {f.operator ? ` · ${f.operator}` : ""}
-                </p>
+                {f.named ? (
+                  <>
+                    <p className="truncate text-sm font-semibold text-slate-800">{f.name}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {f.kind}
+                      {f.operator ? ` · ${f.operator}` : ""}
+                    </p>
+                  </>
+                ) : f.locality ? (
+                  <>
+                    <p className="truncate text-sm font-semibold text-slate-800">
+                      {f.kind} near {f.locality}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1 text-[0.6875rem] text-slate-400">
+                      <Tag size={10} className="shrink-0" aria-hidden="true" />
+                      No name on this listing — located by its coordinates, not tagged by anyone
+                      {f.operator ? ` (run by ${f.operator})` : ""}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="truncate text-sm font-semibold text-slate-800">{f.kind}</p>
+                    <p className="mt-1 flex items-center gap-1 text-[0.6875rem] text-slate-400">
+                      <Tag size={10} className="shrink-0" aria-hidden="true" />
+                      No name on record — a real mapped location, just not one anyone has named
+                      {f.operator ? ` (run by ${f.operator})` : ""}
+                    </p>
+                  </>
+                )}
               </div>
               <span className="shrink-0 rounded-lg bg-brand-50 px-2 py-1 text-xs font-bold tabular-nums text-brand-600">
                 {f.distanceKm} km

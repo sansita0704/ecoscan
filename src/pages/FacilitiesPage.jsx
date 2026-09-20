@@ -1,21 +1,31 @@
+import { useCallback, useRef } from "react";
 import { MapPin } from "lucide-react";
-import DropoffFinder from "../components/map/DropoffFinder";
+import NearbyFacilities from "../components/facilities/NearbyFacilities";
+import PickupScheduler from "../components/facilities/PickupScheduler";
 import WasteIllustration from "../components/illustrations/WasteIllustration";
 import PageHeader from "../components/layout/PageHeader";
 import Card from "../components/ui/Card";
 import { BINS } from "../config/wasteTaxonomy";
 
 export default function FacilitiesPage() {
+  const schedulerRef = useRef(null);
+
+  const scrollToScheduler = useCallback(() => {
+    schedulerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   return (
     <div className="space-y-6">
       <PageHeader
         icon={MapPin}
         eyebrow="Drop-off"
         title="Nearby facilities"
-        subtitle="Where to take items that can't go in a kerbside bin."
+        subtitle="Where to take items that can't go in a kerbside bin — or have them collected instead."
       />
 
-      <DropoffFinder />
+      <NearbyFacilities onSchedulePickup={scrollToScheduler} />
+
+      <PickupScheduler ref={schedulerRef} />
 
       <Card className={`flex flex-col gap-4 border p-4 sm:flex-row sm:items-center ${BINS.hazardous.border} ${BINS.hazardous.surface}`}>
         <WasteIllustration id="hazardous" tint="#D97706" className="h-24 w-24 shrink-0" />
