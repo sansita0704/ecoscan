@@ -110,12 +110,35 @@ function Hazardous({ tint, ...rest }) {
   );
 }
 
+function Organic({ tint, ...rest }) {
+  return (
+    <Frame tint={tint} {...rest}>
+      {/* a stick, with a couple of leaves - wood/garden waste */}
+      <path d="M34 84 66 42" {...S} />
+      <path
+        d="M46 68c2-8 8-13 16-14-1 8-6 14-14 16-1 0-2-1-2-2Z"
+        fill={tint}
+        fillOpacity="0.5"
+        {...S}
+      />
+      <path
+        d="M56 54c1-7 6-11 13-12 0 7-4 12-11 14-1 0-2-1-2-2Z"
+        fill={tint}
+        fillOpacity="0.5"
+        {...S}
+      />
+      <path d="M30 90h12" {...S} strokeOpacity="0.55" />
+    </Frame>
+  );
+}
+
 const BY_ID = {
   plastic: Plastic,
   paper: Paper,
   glass: Glass,
   metal: Metal,
   hazardous: Hazardous,
+  organic: Organic,
 };
 
 export default function WasteIllustration({ id, tint = "#8B5CF6", className = "" }) {

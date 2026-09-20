@@ -32,6 +32,7 @@ function readJson(req) {
 // serves stale handler code after every edit.
 const ROUTES = {
   "/api/ai/advice": { module: "/server/lib/adviceHandler.js", fn: "handleAdvice" },
+  "/api/ai/chat": { module: "/server/lib/chatHandler.js", fn: "handleChat" },
   "/api/facilities/nearby": { module: "/server/lib/facilitiesHandler.js", fn: "handleFacilities" },
   "/api/facilities/geocode": { module: "/server/lib/geocodeHandler.js", fn: "handleGeocode" },
 };
@@ -43,7 +44,11 @@ const ROUTES = {
 // problem. A HEAD request costs neither service anything meaningful and
 // pays that one-time cost at server startup instead of during a user's
 // first real search.
-const WARM_UP_HOSTS = ["https://overpass-api.de/", "https://nominatim.openstreetmap.org/"];
+const WARM_UP_HOSTS = [
+  "https://overpass-api.de/",
+  "https://nominatim.openstreetmap.org/",
+  "https://api.groq.com/",
+];
 
 export function aiDevRoutes() {
   return {

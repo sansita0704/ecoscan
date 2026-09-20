@@ -5,6 +5,7 @@ import Sidebar from "./components/layout/Sidebar";
 import { useCamera } from "./hooks/useCamera";
 import { useMultiDisposalAdvice } from "./hooks/useMultiDisposalAdvice";
 import { useScanLog } from "./hooks/useScanLog";
+import ChatPage from "./pages/ChatPage";
 import FacilitiesPage from "./pages/FacilitiesPage";
 import ImpactPage from "./pages/ImpactPage";
 import LandingPage from "./pages/LandingPage";
@@ -67,6 +68,7 @@ export default function App() {
           )}
           {view === "guide" && <WasteGuidePage stats={stats} />}
           {view === "facilities" && <FacilitiesPage />}
+          {view === "chat" && <ChatPage />}
           {view === "impact" && (
             <ImpactPage stats={stats} onReset={reset} onStartScanning={startScanning} />
           )}
