@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Aperture, Camera, CameraOff, ScanLine, Volume2, VolumeX } from "lucide-react";
+import { Aperture, Camera, CameraOff, ScanLine, ScanSearch, Volume2, VolumeX } from "lucide-react";
 import { useMeasuredFps } from "../../hooks/useMeasuredFps";
 import { useVideoViewport } from "../../hooks/useVideoViewport";
 import ActionButton from "../ui/ActionButton";
@@ -46,6 +46,8 @@ export default function LiveStream({
   onToggleMute,
   onCapture,
   lastCapture,
+  deepScan,
+  onToggleDeepScan,
 }) {
   const [mirrored, setMirrored] = useState(true);
   const containerRef = useRef(null);
@@ -102,7 +104,13 @@ export default function LiveStream({
               </Badge>
             </div>
 
-            <div className="absolute right-4 top-4">
+            <div className="absolute right-4 top-4 flex items-center gap-2">
+              {deepScan && (
+                <Badge tone="accent" className="!bg-ink-950/70 backdrop-blur-sm">
+                  <ScanSearch size={12} aria-hidden="true" />
+                  Deep Scan
+                </Badge>
+              )}
               {detectionError ? (
                 <Badge tone="red" className="!bg-ink-950/70 backdrop-blur-sm">
                   Model unreachable
@@ -150,6 +158,12 @@ export default function LiveStream({
           disabled={!isLive}
         />
         <ActionButton
+          icon={ScanSearch}
+          label={deepScan ? "Deep Scan on" : "Deep Scan"}
+          onClick={onToggleDeepScan}
+          active={deepScan}
+        />
+        <ActionButton
           icon={muted ? VolumeX : Volume2}
           label={muted ? "Alerts muted" : "Mute alerts"}
           onClick={onToggleMute}
@@ -166,6 +180,14 @@ export default function LiveStream({
           </div>
         )}
       </div>
+
+      {deepScan && (
+        <p className="border-t border-slate-100 px-4 py-2 text-xs leading-relaxed text-slate-500">
+          Deep Scan trades a smooth preview for the thorough, multi-pass detection Upload Image
+          uses - expect the feed to pause for a second or two between reads while it looks for
+          smaller or overlapping items.
+        </p>
+      )}
     </Card>
   );
 }

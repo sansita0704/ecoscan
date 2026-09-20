@@ -83,10 +83,10 @@ function toDetection(raw) {
  * straight to the model and map its output through `toDetection`.
  *
  * @param {HTMLVideoElement} video
- * @param {{signal?: AbortSignal}} [opts]
+ * @param {{signal?: AbortSignal, augment?: boolean}} [opts]
  * @returns {Promise<import("../types/contracts").Detection | null>}
  */
-export async function detect(video, { signal } = {}) {
+export async function detect(video, { signal, augment = false } = {}) {
   if (USE_MOCK) return mockDetect(signal);
 
   // Un-mirrored, downscaled frame: the mirror toggle is display-only.
@@ -98,6 +98,12 @@ export async function detect(video, { signal } = {}) {
 
   const body = new FormData();
   body.append("frame", frame, "frame.jpg");
+  // Deep Scan mode: opts into the same tiled + test-time-augmentation pass
+  // Upload Image always uses. Slower (the backend runs several passes under
+  // one lock), but since the caller only schedules its next tick after this
+  // one resolves (see hooks/useDetection), turning it on naturally slows the
+  // live loop to match rather than needing a second timer or tracker.
+  if (augment) body.append("augment", "true");
   return toDetection(await request("/api/v1/detect", { method: "POST", body, signal }));
 }
 

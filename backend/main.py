@@ -280,7 +280,12 @@ def _boxes_to_candidates(boxes, tile_box: tuple, frame_w: int, frame_h: int) -> 
 
 
 def _finalize_detections(
-    candidates: List[Dict[str, Any]], names, frame_w: int, frame_h: int, dedup_iou: float = None
+    candidates: List[Dict[str, Any]],
+    names,
+    frame_w: int,
+    frame_h: int,
+    dedup_iou: float = None,
+    containment_threshold: float = None,
 ) -> List[Dict[str, Any]]:
     """Shared pipeline from raw candidates (one pass or merged across tiles) to
     the standardized detection payload: class resolution, the small-item
@@ -347,6 +352,7 @@ def _finalize_detections(
 
     tiled_mode = dedup_iou is not None
     threshold = CROSS_CLASS_IOU if dedup_iou is None else dedup_iou
+    containment_bar = TILE_CONTAINMENT if containment_threshold is None else containment_threshold
     # NMS runs per class (and per tile, when tiled), so one physical item can
     # come back as two classes, or the same class from two overlapping tiles.
     # Keep the stronger reading regardless of which pass or class produced it.
@@ -357,7 +363,7 @@ def _finalize_detections(
     for det in detections:
         is_dup = any(_iou(det["_norm_box"], k["_norm_box"]) >= threshold for k in kept)
         if not is_dup and tiled_mode:
-            is_dup = any(_containment(det["_norm_box"], k["_norm_box"]) >= TILE_CONTAINMENT for k in kept)
+            is_dup = any(_containment(det["_norm_box"], k["_norm_box"]) >= containment_bar for k in kept)
         if is_dup:
             continue
         kept.append(det)
@@ -387,6 +393,27 @@ TILE_FRAGMENT_IOU = 0.30
 # See _containment: 70%+ of a candidate's own area sitting inside another
 # box marks it a fragment of that box too, independent of plain IoU.
 TILE_CONTAINMENT = 0.70
+# See _decompose_large_detections: a kept detection covering at least this
+# much of the frame is treated as a possible multi-item blob (a poly bag, a
+# pile) worth zooming into, rather than one big real object.
+ROI_DECOMPOSE_MIN_AREA = _env_float("ECOSCAN_ROI_DECOMPOSE_MIN_AREA", 0.10)
+# Only the largest of these get the extra zoom-in pass, to bound latency.
+ROI_DECOMPOSE_MAX_REGIONS = 2
+# Padding added around a region before subdividing it, so an item sitting
+# right at the coarse box's edge doesn't get sliced off.
+ROI_PAD_FRACTION = 0.12
+# Each zoomed sub-tile covers this fraction of the (padded) region's own
+# width/height - deliberately tighter than TILE_FRACTION's 0.65, since the
+# goal here is separating items already known to be crammed into one small
+# area, not re-scanning a whole frame.
+ROI_TILE_FRACTION = 0.6
+# Sub-tiles this zoomed in overlap each other far more than the outer
+# frame-quadrant tiles do, so two of them seeing the same one object produce
+# much more mutual overlap than two coarse tiles would - the bar for calling
+# it a duplicate needs to be correspondingly lower, or one real item comes
+# back reported 2-3 times under slightly different boxes/classes.
+ROI_DEDUP_IOU = 0.20
+ROI_CONTAINMENT = 0.40
 
 
 def _tile_boxes(frame_w: int, frame_h: int) -> List[tuple]:
@@ -397,6 +424,26 @@ def _tile_boxes(frame_w: int, frame_h: int) -> List[tuple]:
     xs = sorted({0, frame_w - tw})
     ys = sorted({0, frame_h - th})
     return [(x, y, tw, th) for x in xs for y in ys]
+
+
+def _roi_tile_boxes(roi_box: tuple, frame_w: int, frame_h: int) -> List[tuple]:
+    """Like _tile_boxes, but zoomed into an arbitrary region instead of the
+    whole frame - generalizes the same overlapping-quadrant idea to "zoom
+    into this one blob" rather than "zoom into this one frame".
+    """
+    rx, ry, rw, rh = roi_box
+    pad_w, pad_h = rw * ROI_PAD_FRACTION, rh * ROI_PAD_FRACTION
+    x1 = max(0.0, rx - pad_w)
+    y1 = max(0.0, ry - pad_h)
+    x2 = min(float(frame_w), rx + rw + pad_w)
+    y2 = min(float(frame_h), ry + rh + pad_h)
+    rw, rh = x2 - x1, y2 - y1
+    if rw <= 0 or rh <= 0:
+        return []
+    tw, th = rw * ROI_TILE_FRACTION, rh * ROI_TILE_FRACTION
+    xs = sorted({x1, x1 + rw - tw})
+    ys = sorted({y1, y1 + rh - th})
+    return [(int(x), int(y), int(tw), int(th)) for x in xs for y in ys]
 
 
 def _tiled_inference(image: Image.Image, names, augment: bool) -> List[Dict[str, Any]]:
@@ -460,7 +507,93 @@ def _tiled_inference(image: Image.Image, names, augment: bool) -> List[Dict[str,
                 continue
             all_candidates.append(cand)
 
-    return _finalize_detections(all_candidates, names, frame_w, frame_h, dedup_iou=TILE_FRAGMENT_IOU)
+    merged = _finalize_detections(all_candidates, names, frame_w, frame_h, dedup_iou=TILE_FRAGMENT_IOU)
+    return _decompose_large_detections(image, names, frame_w, frame_h, merged, augment)
+
+
+def _decompose_large_detections(
+    image: Image.Image, names, frame_w: int, frame_h: int, detections: List[Dict[str, Any]], augment: bool
+) -> List[Dict[str, Any]]:
+    """For each kept detection covering a large share of the frame, zoom into
+    just that region and check whether it's actually more than one item.
+
+    A poly bag, or several items piled together, very often comes back from
+    the passes above as one oversized box: a single (frequently wrong) class
+    guess covering all of it at once, because at frame resolution the whole
+    blob is the strongest signal the model finds. Verified on a real
+    cluttered-table photo: one pass's box for a small plastic scoop (never
+    surfaced by any full-frame or quadrant-tile pass at any confidence, down
+    to 0.01) only appeared once this zoomed in on the blob it was hiding
+    inside of.
+
+    Only swaps in the finer read when it resolves to 2+ items - a single
+    result back means the zoom didn't reveal anything new, and keeping the
+    original avoids trading one plausible box for a fresh misclassification.
+
+    Known limitation, also verified directly rather than assumed: on a photo
+    where the person's own hand or face shares the frame with the bag (i.e.
+    exactly the common "holding the bag up to the camera" pose), a zoomed
+    sub-tile can land on the hand/face instead of an item and report it as a
+    (wrong) extra detection. Framing the bag against a plain background
+    instead of against yourself avoids this; it isn't fixed at the pipeline
+    level, since telling skin/face apart from a waste item isn't something
+    this model was ever trained to do.
+    """
+    large = sorted(
+        (d for d in detections if d["_norm_box"]["w"] * d["_norm_box"]["h"] >= ROI_DECOMPOSE_MIN_AREA),
+        key=lambda d: d["_norm_box"]["w"] * d["_norm_box"]["h"],
+        reverse=True,
+    )[:ROI_DECOMPOSE_MAX_REGIONS]
+
+    result = list(detections)
+    for det in large:
+        box = det["_norm_box"]
+        roi_px = (box["x"] * frame_w, box["y"] * frame_h, box["w"] * frame_w, box["h"] * frame_h)
+        roi_candidates: List[Dict[str, Any]] = []
+        for tile_box in _roi_tile_boxes(roi_px, frame_w, frame_h):
+            ox, oy, tw, th = tile_box
+            if tw <= 0 or th <= 0:
+                continue
+            tile_result = _run_inference(image.crop((ox, oy, ox + tw, oy + th)), augment)
+            if not tile_result:
+                continue
+            roi_candidates.extend(_boxes_to_candidates(tile_result[0].boxes, tile_box, frame_w, frame_h))
+
+        if not roi_candidates:
+            continue
+        roi_kept = _finalize_detections(
+            roi_candidates, names, frame_w, frame_h,
+            dedup_iou=ROI_DEDUP_IOU, containment_threshold=ROI_CONTAINMENT,
+        )
+        if len(roi_kept) < 2:
+            continue
+
+        logger.info(
+            "Decomposed one %s (%.0f%% area) into %d items: %s",
+            det["label"], (box["w"] * box["h"]) * 100, len(roi_kept),
+            ", ".join(f"{d['label']} ({d['confidence']:.2f})" for d in roi_kept),
+        )
+        result = [d for d in result if d is not det] + roi_kept
+
+    result.sort(key=lambda d: d["_score"], reverse=True)
+
+    # A decomposed region's padding (see _roi_tile_boxes) can bleed a sub-tile
+    # into a neighbouring item that was already resolved as its own detection,
+    # or into another region's own decomposition, re-finding it a second
+    # time. Each region's own roi_kept is already deduped against itself
+    # above at the ROI bar; this uses the same (stricter than the outer
+    # quadrant-tile) bar for everything downstream of a decompose, since it's
+    # exactly the "different zoomed crop, same object" pattern that bar
+    # exists for - the outer TILE_FRAGMENT_IOU/TILE_CONTAINMENT stay reserved
+    # for genuinely coarse, frame-scale tile fragments.
+    deduped: List[Dict[str, Any]] = []
+    for det in result:
+        is_dup = any(_iou(det["_norm_box"], k["_norm_box"]) >= ROI_DEDUP_IOU for k in deduped)
+        if not is_dup:
+            is_dup = any(_containment(det["_norm_box"], k["_norm_box"]) >= ROI_CONTAINMENT for k in deduped)
+        if not is_dup:
+            deduped.append(det)
+    return deduped
 
 
 def _decode_upload(image_bytes: bytes) -> Image.Image:

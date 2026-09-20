@@ -79,11 +79,16 @@ export default function ScannerPage({ camera, muted, onToggleMute, onScan, advic
   const [sheetOpen, setSheetOpen] = useState(false);
   const [tab, setTab] = useState("detection");
   const [source, setSource] = useState("live");
+  // Off by default: preserves the current smooth live preview. Turning it on
+  // opts the live loop into the same tiled + TTA pass Upload Image always
+  // uses, at the cost of a stuttering feed (see LiveStream) - that trade-off
+  // belongs to the user, not something to impose silently.
+  const [deepScan, setDeepScan] = useState(false);
   // Which item's card asked for the QR token, so that card alone shows the
   // spinner and the modal can be attributed back to it.
   const [tokenItem, setTokenItem] = useState(null);
 
-  const { detection, latencyMs, error: detectionError } = useDetection(videoRef, camera.isLive);
+  const { detection, latencyMs, error: detectionError } = useDetection(videoRef, camera.isLive, deepScan);
   const upload = useImageDetection();
   const disposal = useDisposalToken();
   const { resolve: resolveLocation } = useGeolocation();
@@ -231,6 +236,8 @@ export default function ScannerPage({ camera, muted, onToggleMute, onScan, advic
               onToggleMute={onToggleMute}
               onCapture={handleCapture}
               lastCapture={lastCapture}
+              deepScan={deepScan}
+              onToggleDeepScan={() => setDeepScan((d) => !d)}
             />
           ) : (
             <ImageUploadPanel

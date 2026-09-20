@@ -26,12 +26,20 @@ import { createObjectTracker } from "../utils/objectTracker";
  * - `latencyMs` is the real round-trip of the last successful call.
  * - Cleans up (abort + clear) when disabled or unmounted.
  *
+ * `deepScan`, when true, asks the backend for the same tiled + test-time-
+ * augmentation pass Upload Image always uses, trading the usual ~100ms/tick
+ * cadence for ~1.2-2s/tick in exchange for finding items a single pass misses
+ * (small or occluded pieces in a cluttered bag). No new timer or tracker
+ * logic needed for this: since the next tick is only scheduled once the
+ * current one resolves, passing it straight through to `detect()` just slows
+ * the existing single cadence to match.
+ *
  * @returns {{ detection: import("../types/contracts").Detection|null, latencyMs: number|null, error: Error|null }}
  *   `detection` is the most prominent confirmed item, spread with `detections`
  *   holding every confirmed item in the frame (that one first) - same contract
  *   as before, just no longer limited to one item.
  */
-export function useDetection(videoRef, enabled) {
+export function useDetection(videoRef, enabled, deepScan = false) {
   const [detection, setDetection] = useState(null);
   const [latencyMs, setLatencyMs] = useState(null);
   const [error, setError] = useState(null);
@@ -67,7 +75,7 @@ export function useDetection(videoRef, enabled) {
       if (video && video.readyState >= 2) {
         const startedAt = performance.now();
         try {
-          const result = await detect(video, { signal: controller.signal });
+          const result = await detect(video, { signal: controller.signal, augment: deepScan });
           if (cancelled) return;
 
           const { primary, all } = tracker.push(result?.detections ?? []);
@@ -93,7 +101,7 @@ export function useDetection(videoRef, enabled) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [videoRef, enabled]);
+  }, [videoRef, enabled, deepScan]);
 
   return { detection, latencyMs, error };
 }
